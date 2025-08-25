@@ -1,9 +1,3 @@
-# Welcome to your Lovable project
-
-## Project info
-
-**URL**: https://lovable.dev/projects/1343f73b-7d41-45cd-bb9e-f3e99c9d3b4d
-
 ## SMGTS — Simple Sales & Inventory (local dev)
 
 A small Vite + React frontend with a TypeScript Express + Mongoose backend for sales and inventory management.
