@@ -6,6 +6,7 @@ dotenv.config();
 const DEFAULT_CLIENT_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:8080',
+  'https://smgts.onrender.com',
 ];
 
 const parsedClientOrigins = (process.env.CLIENT_ORIGINS || '')
