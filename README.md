@@ -4,70 +4,79 @@
 
 **URL**: https://lovable.dev/projects/1343f73b-7d41-45cd-bb9e-f3e99c9d3b4d
 
-## How can I edit this code?
+## SMGTS — Simple Sales & Inventory (local dev)
 
-There are several ways of editing your application.
+A small Vite + React frontend with a TypeScript Express + Mongoose backend for sales and inventory management.
 
-**Use Lovable**
+This README gives the minimum steps to run the project locally and mentions the seeded accounts used for development.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/1343f73b-7d41-45cd-bb9e-f3e99c9d3b4d) and start prompting.
+### Tech stack
+- Frontend: Vite, React, TypeScript, Tailwind CSS, shadcn/ui
+- Backend: Node.js, Express, TypeScript, Mongoose (MongoDB)
 
-Changes made via Lovable will be committed automatically to this repo.
+### Quick start (Windows PowerShell)
+1. Install dependencies (root contains the frontend):
 
-**Use your preferred IDE**
+```powershell
+cd "C:\Users\USER\Downloads\SMGTS"
+npm install
+```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+2. Install backend deps and run backend (separate terminal):
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```powershell
+cd backend
+npm install
+# dev: npm run dev or start with npm start
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+3. Run frontend (root):
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```powershell
+cd "C:\Users\USER\Downloads\SMGTS"
+npm run dev
+```
 
-**Use GitHub Codespaces**
+By default the backend runs on port 5000 and the frontend on Vite's default (usually 5173).
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Seed data
+- Run the backend seed script to create sample data and two users:
 
-## What technologies are used for this project?
+```powershell
+cd backend
+npm run seed
+```
 
-This project is built with:
+- Seeded accounts (development):
+	- admin@test.com / password123 (role: admin)
+	- agent@test.com / password123 (role: agent)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+The seed logic lives in `backend/src/scripts/seed.ts`.
 
-## How can I deploy this project?
+### Environment
+Create a `.env` for the backend (example variables):
 
-Simply open [Lovable](https://lovable.dev/projects/1343f73b-7d41-45cd-bb9e-f3e99c9d3b4d) and click on Share -> Publish.
+- MONGO_URI (MongoDB connection string)
+- JWT_SECRET (JWT signing secret)
+- JWT_EXPIRES_IN (e.g. "7d")
+- CLIENT_ORIGIN (frontend origin for CORS)
 
-## Can I connect a custom domain to my Lovable project?
+Example `.env` (do not commit real secrets):
 
-Yes, you can!
+```
+MONGO_URI=mongodb://localhost:27017/sales_mgmt
+JWT_SECRET=devsecret
+JWT_EXPIRES_IN=7d
+CLIENT_ORIGIN=http://localhost:5173
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Notes
+- Products have server-generated SKUs; the frontend creates products without providing `sku`.
+- If you reseed the database, previously issued JWTs may become invalid (tokens encode user id). Re-login after reseeding.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Contributing / pushing
+- A `.gitignore` is present to avoid committing node_modules, env files, logs and build artifacts.
+- To push this repository to GitHub, set the remote and push the `main` branch.
+
+If you'd like, I can add more documentation (API reference, scripts, or a short development checklist).
