@@ -3,11 +3,14 @@ import { listProducts, createProduct, updateProduct, deleteProduct, getLowStockP
 import { protect, authorize } from '../middleware/auth.js';
 
 const router = Router();
-router.use(protect);
+
+// Public: list products (used by POS / sales pages)
 router.get('/', listProducts);
-router.get('/low-stock', getLowStockProducts);
-router.post('/', authorize('admin'), createProduct);
-router.put('/:id', authorize('admin'), updateProduct);
-router.delete('/:id', authorize('admin'), deleteProduct);
+
+// Protected endpoints
+router.get('/low-stock', protect, getLowStockProducts);
+router.post('/', protect, authorize('admin'), createProduct);
+router.put('/:id', protect, authorize('admin'), updateProduct);
+router.delete('/:id', protect, authorize('admin'), deleteProduct);
 
 export default router;

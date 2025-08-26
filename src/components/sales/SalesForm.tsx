@@ -80,9 +80,19 @@ export function SalesForm() {
           const products = await response.json();
           setAvailableProducts(products);
         } else {
+          // Attempt to include server response body for easier debugging
+          let body = '';
+          try {
+            const ct = response.headers.get('content-type') || '';
+            if (ct.includes('application/json')) body = JSON.stringify(await response.json());
+            else body = await response.text();
+          } catch (e) {
+            body = '';
+          }
+          console.error('Failed to fetch products', { status: response.status, body });
           toast({
             title: "Error",
-            description: "Failed to load products",
+            description: `Failed to load products (status ${response.status})`,
             variant: "destructive"
           });
         }
