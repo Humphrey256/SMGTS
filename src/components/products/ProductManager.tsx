@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit, Trash2, Search, Package, AlertTriangle, Lock } from "lucide-react";
 import { formatUGX } from "@/lib/utils";
+import { config } from "@/config";
 
 interface Product {
   _id: string;
@@ -24,7 +25,7 @@ interface Product {
   updatedAt?: string;
 }
 
-const API_BASE_URL = "http://localhost:5000/api";
+const API_BASE_URL = `${config.apiUrl}/api`;
 
 // API functions
 const fetchProducts = async (token: string): Promise<Product[]> => {
