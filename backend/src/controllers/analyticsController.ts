@@ -50,7 +50,7 @@ export async function getAnalytics(_req: Request, res: Response) {
 // Detailed Analytics & Reports for the frontend Analytics page
 export async function getAnalyticsReport(req: Request, res: Response) {
   try {
-    const period = (req.query.period as string) || 'month'; // week | month | quarter | year
+  const period = (req.query.period as string) || 'month'; // day | week | month | quarter | year
 
     // Determine current period boundaries
     const now = new Date();
@@ -64,6 +64,14 @@ export async function getAnalyticsReport(req: Request, res: Response) {
     let prevEnd: Date;
 
     switch (period) {
+      case 'day': {
+        // today only
+        start = startOfDay(now);
+        prevEnd = new Date(start);
+        prevStart = new Date(prevEnd);
+        prevStart.setDate(prevStart.getDate() - 1);
+        break;
+      }
       case 'week': {
         const todayStart = startOfDay(now);
         start = new Date(todayStart);

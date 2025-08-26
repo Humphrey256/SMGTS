@@ -6,6 +6,7 @@ import { SalesForm } from "@/components/sales/SalesForm";
 import { Analytics } from "@/components/analytics/Analytics";
 import { DebtManager } from "@/components/debts/DebtManager";
 import { Sidebar } from "@/components/layout/Sidebar";
+import NotificationBell from '@/components/notifications/NotificationBell';
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
@@ -51,6 +52,9 @@ const Index = () => {
         onLogout={handleLogout}
       />
       <main className="flex-1 overflow-auto p-6">
+        <div className="flex items-start justify-end mb-4">
+          <NotificationBell />
+        </div>
         {renderActiveView()}
       </main>
     </div>
