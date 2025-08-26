@@ -492,7 +492,7 @@ export function ProductManager() {
                   <div className="flex items-center gap-2">
                     <Badge 
                       variant={stockStatus.color === "destructive" ? "destructive" : "outline"}
-                      className={stockStatus.color === "destructive" ? "text-destructive border-destructive" : ""}
+                      className={stockStatus.color === "destructive" ? "bg-destructive text-destructive-foreground border-transparent" : ""}
                     >
                       {product.quantity}
                     </Badge>
