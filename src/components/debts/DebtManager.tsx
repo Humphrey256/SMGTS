@@ -150,7 +150,7 @@ export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
             {userRole === "admin" ? "Manage all debt requests and payments" : "Track your debt requests and payments"}
           </p>
         </div>
-        {userRole === "agent" && (
+  {(userRole === "agent" || userRole === "admin") && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-primary">
