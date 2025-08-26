@@ -323,7 +323,7 @@ export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
                       </div>
                     </div>
                     
-                    {userRole === "admin" && debt.status === "Pending" && (
+                    {(userRole === "admin" || debt.agentEmail === userEmail) && debt.status === "Pending" && (
                       <div className="flex gap-2 ml-4">
                         <Button
                           variant="outline"

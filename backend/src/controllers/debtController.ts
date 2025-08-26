@@ -19,10 +19,15 @@ export async function listDebts(req: AuthRequest, res: Response) {
 }
 
 export async function updateDebtStatus(req: AuthRequest, res: Response) {
-  if (req.user!.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
   const { status } = req.body;
   const debt = await Debt.findById(req.params.id);
   if (!debt) return res.status(404).json({ message: 'Not found' });
+
+  // Allow update if user is admin OR the issuer (creator) of the debt
+  const isAdmin = req.user!.role === 'admin';
+  const isIssuer = debt.issuer && debt.issuer.equals ? debt.issuer.equals(req.user!._id) : String(debt.issuer) === String(req.user!._id);
+  if (!isAdmin && !isIssuer) return res.status(403).json({ message: 'Forbidden' });
+
   debt.status = status;
   await debt.save();
   res.json(debt);
