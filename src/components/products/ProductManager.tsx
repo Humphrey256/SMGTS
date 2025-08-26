@@ -126,9 +126,13 @@ export function ProductManager() {
   const [formData, setFormData] = useState({
     name: "",
     category: "",
+    // legacy single-variant fields are kept for compatibility but we prefer using `variants`
     costPrice: "",
     sellingPrice: "",
-    quantity: ""
+    quantity: "",
+    variants: [
+      { title: 'Default', packSize: '1', costPrice: '', price: '', quantity: '' }
+    ] as Array<{ title: string; packSize: string; costPrice: string; price: string; quantity: string }>
   });
 
   const categories = [
@@ -219,9 +223,10 @@ export function ProductManager() {
     setFormData({
       name: "",
       category: "",
-      costPrice: "",
-      sellingPrice: "",
-      quantity: ""
+  costPrice: "",
+  sellingPrice: "",
+  quantity: "",
+  variants: [ { title: 'Default', packSize: '1', costPrice: '', price: '', quantity: '' } ]
     });
     setEditingProduct(null);
   };
@@ -238,19 +243,25 @@ export function ProductManager() {
       return;
     }
     
-    // Build a single-variant payload to satisfy the new Product model (variants[])
-    const variant = {
-      title: 'Default',
-      packSize: 1,
-      costPrice: parseFloat(formData.costPrice) || 0,
-      price: parseFloat(formData.sellingPrice) || 0,
-      quantity: parseInt(formData.quantity) || 0,
-    } as ProductVariant;
+    // Build variants payload. Prefer explicit variants from the form; fall back to legacy fields if none provided.
+    const variantsFromForm = (formData.variants || []).map(v => ({
+      title: v.title || 'Default',
+      packSize: parseInt(v.packSize) || 1,
+      costPrice: parseFloat(v.costPrice) || 0,
+      price: parseFloat(v.price) || 0,
+      quantity: parseInt(v.quantity) || 0
+    }));
 
     const productData: any = {
       name: formData.name,
       category: formData.category,
-      variants: [variant]
+      variants: variantsFromForm.length > 0 ? variantsFromForm : [ {
+        title: 'Default',
+        packSize: 1,
+        costPrice: parseFloat(formData.costPrice) || 0,
+        price: parseFloat(formData.sellingPrice) || 0,
+        quantity: parseInt(formData.quantity) || 0
+      } ]
     };
 
     if (editingProduct) {
@@ -270,16 +281,19 @@ export function ProductManager() {
       return;
     }
     
-    // pick primary variant if available, otherwise fall back to legacy fields
-    const primary = (product.variants && product.variants.length > 0) ? product.variants[0] : undefined;
+    // populate full variants array when editing
+    const variantsForForm = (product.variants && product.variants.length > 0)
+      ? product.variants.map(v => ({ title: v.title || 'Default', packSize: String(v.packSize || 1), costPrice: String(v.costPrice || 0), price: String(v.price || 0), quantity: String(v.quantity || 0) }))
+      : [ { title: 'Default', packSize: String(product.quantity ?? 1), costPrice: String(product.costPrice ?? 0), price: String(product.sellingPrice ?? 0), quantity: String(product.quantity ?? 0) } ];
 
     setEditingProduct(product);
     setFormData({
       name: product.name,
       category: product.category,
-      costPrice: (primary ? primary.costPrice : (product.costPrice ?? 0)).toString(),
-      sellingPrice: (primary ? primary.price : (product.sellingPrice ?? 0)).toString(),
-      quantity: (primary ? primary.quantity : (product.quantity ?? 0)).toString()
+      costPrice: '',
+      sellingPrice: '',
+      quantity: '',
+      variants: variantsForForm
     });
     setIsDialogOpen(true);
   };
@@ -441,6 +455,69 @@ export function ProductManager() {
                     required
                     disabled={createMutation.isPending || updateMutation.isPending}
                   />
+                </div>
+                {/* Variants editor - allows multiple variants per product */}
+                <div>
+                  <Label>Variants</Label>
+                  <div className="space-y-2">
+                    {formData.variants.map((v, idx) => (
+                      <div key={idx} className="grid grid-cols-6 gap-2 items-end">
+                        <div className="col-span-2">
+                          <Label className="text-xs">Title</Label>
+                          <Input value={v.title} onChange={(e) => {
+                            const next = { ...formData };
+                            next.variants[idx].title = e.target.value;
+                            setFormData(next);
+                          }} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Pack Size</Label>
+                          <Input value={v.packSize} onChange={(e) => {
+                            const next = { ...formData };
+                            next.variants[idx].packSize = e.target.value;
+                            setFormData(next);
+                          }} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Cost</Label>
+                          <Input value={v.costPrice} onChange={(e) => {
+                            const next = { ...formData };
+                            next.variants[idx].costPrice = e.target.value;
+                            setFormData(next);
+                          }} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Price</Label>
+                          <Input value={v.price} onChange={(e) => {
+                            const next = { ...formData };
+                            next.variants[idx].price = e.target.value;
+                            setFormData(next);
+                          }} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Qty</Label>
+                          <Input value={v.quantity} onChange={(e) => {
+                            const next = { ...formData };
+                            next.variants[idx].quantity = e.target.value;
+                            setFormData(next);
+                          }} />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" onClick={() => {
+                            const next = { ...formData };
+                            next.variants.splice(idx, 1);
+                            if (next.variants.length === 0) next.variants.push({ title: 'Default', packSize: '1', costPrice: '', price: '', quantity: '' });
+                            setFormData(next);
+                          }}>Remove</Button>
+                        </div>
+                      </div>
+                    ))}
+                    <Button variant="ghost" onClick={() => {
+                      const next = { ...formData };
+                      next.variants.push({ title: 'New variant', packSize: '1', costPrice: '', price: '', quantity: '' });
+                      setFormData(next);
+                    }}>Add Variant</Button>
+                  </div>
                 </div>
                 <Button 
                   type="submit" 
