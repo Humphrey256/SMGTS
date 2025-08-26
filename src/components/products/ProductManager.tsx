@@ -265,7 +265,7 @@ export function ProductManager() {
 
   const getStockStatus = (quantity: number) => {
     if (quantity === 0) return { label: "Out of Stock", color: "destructive" };
-    if (quantity <= 10) return { label: "Low Stock", color: "warning" };
+  if (quantity <= 10) return { label: "Low Stock", color: "destructive" };
     return { label: "In Stock", color: "success" };
   };
 
@@ -479,12 +479,12 @@ export function ProductManager() {
                   <div className="flex items-center gap-2">
                     <Badge 
                       variant={stockStatus.color === "destructive" ? "destructive" : "outline"}
-                      className={stockStatus.color === "warning" ? "text-warning border-warning" : ""}
+                      className={stockStatus.color === "destructive" ? "text-destructive border-destructive" : ""}
                     >
                       {product.quantity}
                     </Badge>
                     {product.quantity <= 10 && (
-                      <AlertTriangle className="h-4 w-4 text-warning" />
+                      <AlertTriangle className="h-4 w-4 text-destructive" />
                     )}
                   </div>
                 </div>
