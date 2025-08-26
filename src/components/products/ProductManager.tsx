@@ -420,40 +420,47 @@ export function ProductManager() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="costPrice">Cost Price (UGX)</Label>
-                    <Input
-                        id="costPrice"
+                {/* Show legacy single-variant fields only when form has no meaningful variants */}
+                {(formData.variants.length === 0 || (formData.variants.length === 1 && formData.variants[0].title === 'Default')) ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="costPrice">Cost Price (UGX)</Label>
+                        <Input
+                            id="costPrice"
+                            type="number"
+                            step="0.01"
+                            value={formData.costPrice}
+                            onChange={(e) => setFormData({...formData, costPrice: e.target.value})}
+                            disabled={createMutation.isPending || updateMutation.isPending}
+                          />
+                      </div>
+                      <div>
+                        <Label htmlFor="sellingPrice">Selling Price (UGX)</Label>
+                        <Input
+                          id="sellingPrice"
+                          type="number"
+                          step="0.01"
+                          value={formData.sellingPrice}
+                          onChange={(e) => setFormData({...formData, sellingPrice: e.target.value})}
+                          disabled={createMutation.isPending || updateMutation.isPending}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label htmlFor="quantity">Quantity</Label>
+                      <Input
+                        id="quantity"
                         type="number"
-                        step="0.01"
-                        value={formData.costPrice}
-                        onChange={(e) => setFormData({...formData, costPrice: e.target.value})}
+                        value={formData.quantity}
+                        onChange={(e) => setFormData({...formData, quantity: e.target.value})}
                         disabled={createMutation.isPending || updateMutation.isPending}
                       />
-                  </div>
-                  <div>
-                    <Label htmlFor="sellingPrice">Selling Price (UGX)</Label>
-                    <Input
-                      id="sellingPrice"
-                      type="number"
-                      step="0.01"
-                      value={formData.sellingPrice}
-                      onChange={(e) => setFormData({...formData, sellingPrice: e.target.value})}
-                      disabled={createMutation.isPending || updateMutation.isPending}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="quantity">Quantity</Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({...formData, quantity: e.target.value})}
-                    disabled={createMutation.isPending || updateMutation.isPending}
-                  />
-                </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-sm text-muted-foreground">Using variant data; legacy Cost/Price/Quantity fields are hidden.</div>
+                )}
                 {/* Variants editor - allows multiple variants per product */}
                 <div>
                   <Label>Variants</Label>
@@ -465,6 +472,9 @@ export function ProductManager() {
                           <Input value={v.title} onChange={(e) => {
                             const next = { ...formData };
                             next.variants[idx].title = e.target.value;
+                            next.costPrice = '';
+                            next.sellingPrice = '';
+                            next.quantity = '';
                             setFormData(next);
                           }} />
                         </div>
@@ -473,6 +483,9 @@ export function ProductManager() {
                           <Input value={v.packSize} onChange={(e) => {
                             const next = { ...formData };
                             next.variants[idx].packSize = e.target.value;
+                            next.costPrice = '';
+                            next.sellingPrice = '';
+                            next.quantity = '';
                             setFormData(next);
                           }} />
                         </div>
@@ -481,6 +494,9 @@ export function ProductManager() {
                           <Input value={v.costPrice} onChange={(e) => {
                             const next = { ...formData };
                             next.variants[idx].costPrice = e.target.value;
+                            next.costPrice = '';
+                            next.sellingPrice = '';
+                            next.quantity = '';
                             setFormData(next);
                           }} />
                         </div>
@@ -489,6 +505,9 @@ export function ProductManager() {
                           <Input value={v.price} onChange={(e) => {
                             const next = { ...formData };
                             next.variants[idx].price = e.target.value;
+                            next.costPrice = '';
+                            next.sellingPrice = '';
+                            next.quantity = '';
                             setFormData(next);
                           }} />
                         </div>
@@ -497,6 +516,9 @@ export function ProductManager() {
                           <Input value={v.quantity} onChange={(e) => {
                             const next = { ...formData };
                             next.variants[idx].quantity = e.target.value;
+                            next.costPrice = '';
+                            next.sellingPrice = '';
+                            next.quantity = '';
                             setFormData(next);
                           }} />
                         </div>
@@ -513,6 +535,10 @@ export function ProductManager() {
                     <Button variant="ghost" onClick={() => {
                       const next = { ...formData };
                       next.variants.push({ title: 'New variant', packSize: '1', costPrice: '', price: '', quantity: '' });
+                      // Clear legacy single-variant fields when variants are used
+                      next.costPrice = '';
+                      next.sellingPrice = '';
+                      next.quantity = '';
                       setFormData(next);
                     }}>Add Variant</Button>
                   </div>
