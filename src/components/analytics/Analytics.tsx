@@ -5,10 +5,11 @@ import { BarChart3, TrendingUp, DollarSign, Package } from "lucide-react";
 import { formatUGX } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { config } from '@/config';
 
 export function Analytics() {
   const [period, setPeriod] = useState<"week" | "month" | "quarter" | "year">("month");
-  const apiBase = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const apiBase = config.apiUrl;
   const { data, isLoading } = useQuery({
     queryKey: ["analytics-report", period],
     queryFn: async () => {

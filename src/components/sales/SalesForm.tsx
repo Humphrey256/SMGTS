@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Minus, ShoppingCart, Receipt, Check, Printer, ArrowRight, RotateCcw } from "lucide-react";
 import { formatUGX } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { config } from '@/config';
 
 interface Product {
   _id: string;
@@ -57,7 +58,7 @@ export function SalesForm() {
       if (!token) return;
       
       try {
-        const apiBase = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const apiBase = config.apiUrl;
         const response = await fetch(`${apiBase}/api/products`, {
           headers: {
             'Authorization': `Bearer ${token}`

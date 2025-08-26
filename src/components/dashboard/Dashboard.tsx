@@ -4,6 +4,7 @@ import { TrendingUp, TrendingDown, Package, Users, DollarSign, AlertTriangle } f
 import { formatUGX } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
+import { config } from '@/config';
 
 interface DashboardProps {
   userRole: string;
@@ -12,7 +13,7 @@ interface DashboardProps {
 
 export function Dashboard({ userRole, onNavigate }: DashboardProps) {
   const { token } = useAuth();
-  const apiBase = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const apiBase = config.apiUrl;
   const { data, isLoading, isError } = useQuery({
     queryKey: ["analytics"],
     queryFn: async () => {
