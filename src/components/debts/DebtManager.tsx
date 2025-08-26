@@ -290,11 +290,7 @@ export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
                         <h3 className="text-lg font-semibold">{debt.title}</h3>
                         <Badge 
                           variant={statusColor === "success" ? "default" : "outline"}
-                          className={`${
-                            statusColor === "success" ? "bg-success text-success-foreground" :
-                            statusColor === "destructive" ? "text-destructive border-destructive" :
-                            "text-warning border-warning"
-                          }`}
+                          className={`${statusColor === "success" ? "bg-success text-success-foreground" : "text-warning border-warning"}`}
                         >
                           <StatusIcon className="h-3 w-3 mr-1" />
                           {debt.status}
