@@ -385,13 +385,14 @@ export function ProductManager() {
                 Add Product
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl w-full max-h-[80vh] overflow-auto">
+            <DialogContent className="max-w-4xl w-full max-h-[80vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
                   {editingProduct ? "Edit Product" : "Add New Product"}
                 </DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="max-h-[70vh] overflow-y-auto pr-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <Label htmlFor="name">Product Name</Label>
                   <Input
@@ -527,6 +528,7 @@ export function ProductManager() {
                   }
                 </Button>
               </form>
+              </div>
             </DialogContent>
           </Dialog>
         ) : (
