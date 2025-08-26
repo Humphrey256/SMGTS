@@ -326,11 +326,8 @@ export function SalesForm() {
                   <SelectContent>
                     {availableProducts.map((product) => (
                       <SelectItem key={product._id} value={product._id}>
-                        <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center w-full">
                           <span>{product.name}</span>
-                          <Badge variant="outline" className="ml-2">
-                            {product.variants && product.variants.length > 0 ? formatUGX(product.variants[0].price) : ''}
-                          </Badge>
                         </div>
                       </SelectItem>
                     ))}
@@ -346,17 +343,16 @@ export function SalesForm() {
                       <SelectValue placeholder={selectedProduct.variants.length ? "Choose a variant" : "No variants"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {selectedProduct.variants.map(v => (
-                        <SelectItem key={v._id} value={v._id}>
-                          <div className="flex items-center justify-between w-full">
-                            <div>
-                              <div className="font-medium">{v.title}</div>
-                              <div className="text-xs text-muted-foreground">Pack: {v.packSize} | Stock: {Math.floor(v.quantity / Math.max(1, v.packSize))} units</div>
+                        {selectedProduct.variants.map(v => (
+                          <SelectItem key={v._id} value={v._id}>
+                            <div className="flex items-center justify-between w-full">
+                              <div>
+                                <div className="font-medium">{v.title} — {formatUGX(v.price)}</div>
+                                <div className="text-xs text-muted-foreground">Pack: {v.packSize} | Stock: {Math.floor(v.quantity / Math.max(1, v.packSize))} units</div>
+                              </div>
                             </div>
-                            <Badge variant="outline">{formatUGX(v.price)}</Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
