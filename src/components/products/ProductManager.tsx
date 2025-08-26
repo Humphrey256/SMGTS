@@ -37,9 +37,22 @@ const fetchProducts = async (token: string): Promise<Product[]> => {
   });
   
   if (!response.ok) {
-    throw new Error('Failed to fetch products');
+    // try to surface server-provided error message when available
+    let body = '';
+    try {
+      const ct = response.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const json = await response.json();
+        body = JSON.stringify(json);
+      } else {
+        body = await response.text();
+      }
+    } catch (e) {
+      body = '';
+    }
+    throw new Error(`Failed to fetch products (status ${response.status}) ${body}`);
   }
-  
+
   return response.json();
 };
 
