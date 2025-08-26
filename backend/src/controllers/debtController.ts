@@ -36,3 +36,19 @@ export async function updateDebtStatus(req: AuthRequest, res: Response) {
   await debt.save();
   res.json(debt);
 }
+
+export async function deleteDebt(req: AuthRequest, res: Response) {
+  const debt = await Debt.findById(req.params.id);
+  if (!debt) return res.status(404).json({ message: 'Not found' });
+
+  // Only admins can delete debts
+  if (req.user!.role !== 'admin') return res.status(403).json({ message: 'Forbidden' });
+
+  await Debt.findByIdAndDelete(req.params.id);
+  // log deletion for audit
+  try {
+    console.log(`Debt ${req.params.id} deleted by admin ${req.user!.email || req.user!._id}`);
+  } catch (_) {}
+
+  res.json({ message: 'Deleted' });
+}

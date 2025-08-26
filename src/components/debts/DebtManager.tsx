@@ -332,6 +332,32 @@ export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
                           <CheckCircle className="h-4 w-4 mr-1" />
                           Approve
                         </Button>
+                        {userRole === "admin" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (!confirm('Delete this debt? This action cannot be undone.')) return;
+                              (async () => {
+                                try {
+                                  const res = await fetch(`${apiBase}/api/debts/${debt.id}`, {
+                                    method: 'DELETE',
+                                    headers: { Authorization: `Bearer ${token}` }
+                                  });
+                                  if (!res.ok) throw new Error('Failed to delete debt');
+                                  setDebts(prev => prev.filter(d => d.id !== debt.id));
+                                  toast({ title: 'Deleted', description: 'Debt removed' });
+                                } catch (err: any) {
+                                  toast({ title: 'Error', description: err.message || 'Could not delete' });
+                                }
+                              })();
+                            }}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <XCircle className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
