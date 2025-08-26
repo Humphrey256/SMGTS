@@ -2,9 +2,11 @@ services:
   - type: web
     name: smgts-frontend
     env: node
-    buildCommand: npm install && npm run build
+    buildCommand: npm install && npm run build --mode production
     startCommand: npm run preview
     staticPublishPath: ./dist
     envVars:
       - key: VITE_API_URL
         value: https://smgt.onrender.com
+      - key: NODE_ENV
+        value: production
