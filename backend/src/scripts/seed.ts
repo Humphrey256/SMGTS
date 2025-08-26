@@ -25,110 +25,85 @@ async function seed() {
       role: 'agent'
     });
     
-    // Create sample products (prices in UGX) - SKUs will be auto-generated
+    // Create sample products (prices in UGX) using new variants shape - SKUs will be auto-generated
     const productData = [
-      // Pens
+      // Pens (single-variant)
       {
         name: 'Bic Pen',
         category: 'Stationery',
-        costPrice: 500,
-        sellingPrice: 700,
-        quantity: 200
+        variants: [ { title: 'Default', packSize: 1, costPrice: 500, price: 700, quantity: 200 } ]
       },
       {
         name: 'Nataraj Pen',
         category: 'Stationery', 
-        costPrice: 350,
-        sellingPrice: 500,
-        quantity: 200
+        variants: [ { title: 'Default', packSize: 1, costPrice: 350, price: 500, quantity: 200 } ]
       },
-      // Books
+      // Books (single-variant where appropriate)
       {
         name: 'Book 4QR',
         category: 'Books',
-        costPrice: 4000,
-        sellingPrice: 5000,
-        quantity: 120
+        variants: [ { title: 'Default', packSize: 1, costPrice: 4000, price: 5000, quantity: 120 } ]
       },
       {
         name: 'Book 3QR',
         category: 'Books',
-        costPrice: 3600,
-        sellingPrice: 4500,
-        quantity: 120
+        variants: [ { title: 'Default', packSize: 1, costPrice: 3600, price: 4500, quantity: 120 } ]
       },
+      // A4: provide dozen and single variants as requested
       {
         name: 'A4 Book',
         category: 'Books',
-        costPrice: 1500,
-        sellingPrice: 2000,
-        quantity: 150
+        variants: [
+          { title: 'A4 (dozen)', packSize: 12, costPrice: 1500, price: 22000, quantity: 120 },
+          { title: 'A4 (single)', packSize: 1, costPrice: 1500, price: 2000, quantity: 120 }
+        ]
       },
+      // Exercise books with explicit page variants at requested prices
       {
-        name: 'Exercise Book 96 pages',
+        name: 'Exercise Book',
         category: 'Books',
-        costPrice: 800,
-        sellingPrice: 1000,
-        quantity: 150
-      },
-      {
-        name: 'Exercise Book 48 pages',
-        category: 'Books',
-        costPrice: 350,
-        sellingPrice: 500,
-        quantity: 200
+        variants: [
+          { title: '96 pages', packSize: 1, costPrice: 800, price: 10000, quantity: 150 },
+          { title: '48 pages', packSize: 1, costPrice: 350, price: 7000, quantity: 200 }
+        ]
       },
       // Envelopes
       {
         name: 'Envelopes - Big',
         category: 'Office Supplies',
-        costPrice: 350,
-        sellingPrice: 500,
-        quantity: 150
+        variants: [ { title: 'Default', packSize: 1, costPrice: 350, price: 500, quantity: 150 } ]
       },
       {
         name: 'Envelopes - Small',
         category: 'Office Supplies',
-        costPrice: 120,
-        sellingPrice: 200,
-        quantity: 200
+        variants: [ { title: 'Default', packSize: 1, costPrice: 120, price: 200, quantity: 200 } ]
       },
       // Other supplies
       {
         name: 'Mathematical Set (Picfare)',
         category: 'Stationery',
-        costPrice: 4000,
-        sellingPrice: 5000,
-        quantity: 80
+        variants: [ { title: 'Default', packSize: 1, costPrice: 4000, price: 5000, quantity: 80 } ]
       },
       {
         name: 'Clear Bag',
         category: 'Office Supplies',
-        costPrice: 1500,
-        sellingPrice: 2000,
-        quantity: 100
+        variants: [ { title: 'Default', packSize: 1, costPrice: 1500, price: 2000, quantity: 100 } ]
       },
       {
         name: 'Pair of Scissors',
         category: 'Stationery',
-        costPrice: 700,
-        sellingPrice: 1000,
-        quantity: 5  // Low stock for testing
+        variants: [ { title: 'Default', packSize: 1, costPrice: 700, price: 1000, quantity: 5 } ]
       },
-      // Add some more low stock items for testing
+      // Low stock items for testing
       {
         name: 'Ruler 30cm',
         category: 'Stationery',
-        costPrice: 200,
-        sellingPrice: 300,
-        quantity: 3  // Very low stock
+        variants: [ { title: 'Default', packSize: 1, costPrice: 200, price: 300, quantity: 3 } ]
       },
       {
         name: 'Eraser',
         category: 'Stationery',
-        costPrice: 100,
-        sellingPrice: 200,
-        quantity: 8  // Low stock
+        variants: [ { title: 'Default', packSize: 1, costPrice: 100, price: 200, quantity: 8 } ]
       }
     ];
 
