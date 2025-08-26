@@ -286,13 +286,16 @@ export function ProductManager() {
       ? product.variants.map(v => ({ title: v.title || 'Default', packSize: String(v.packSize || 1), costPrice: String(v.costPrice || 0), price: String(v.price || 0), quantity: String(v.quantity || 0) }))
       : [ { title: 'Default', packSize: String(product.quantity ?? 1), costPrice: String(product.costPrice ?? 0), price: String(product.sellingPrice ?? 0), quantity: String(product.quantity ?? 0) } ];
 
+    // If product has exactly one variant, prefill legacy fields for convenience
+    const singleVariant = variantsForForm.length === 1 ? variantsForForm[0] : null;
+
     setEditingProduct(product);
     setFormData({
       name: product.name,
       category: product.category,
-      costPrice: '',
-      sellingPrice: '',
-      quantity: '',
+      costPrice: singleVariant ? String(singleVariant.costPrice || '') : '',
+      sellingPrice: singleVariant ? String(singleVariant.price || '') : '',
+      quantity: singleVariant ? String(singleVariant.quantity || '') : '',
       variants: variantsForForm
     });
     setIsDialogOpen(true);
@@ -427,13 +430,20 @@ export function ProductManager() {
                       <div>
                         <Label htmlFor="costPrice">Cost Price (UGX)</Label>
                         <Input
-                            id="costPrice"
-                            type="number"
-                            step="0.01"
-                            value={formData.costPrice}
-                            onChange={(e) => setFormData({...formData, costPrice: e.target.value})}
-                            disabled={createMutation.isPending || updateMutation.isPending}
-                          />
+                          id="costPrice"
+                          type="number"
+                          step="0.01"
+                          value={formData.costPrice}
+                          onChange={(e) => {
+                            const next = { ...formData, costPrice: e.target.value };
+                            // if single variant, also sync into variant
+                            if (next.variants && next.variants.length === 1) {
+                              next.variants[0].costPrice = e.target.value;
+                            }
+                            setFormData(next);
+                          }}
+                          disabled={createMutation.isPending || updateMutation.isPending}
+                        />
                       </div>
                       <div>
                         <Label htmlFor="sellingPrice">Selling Price (UGX)</Label>
@@ -442,7 +452,13 @@ export function ProductManager() {
                           type="number"
                           step="0.01"
                           value={formData.sellingPrice}
-                          onChange={(e) => setFormData({...formData, sellingPrice: e.target.value})}
+                          onChange={(e) => {
+                            const next = { ...formData, sellingPrice: e.target.value };
+                            if (next.variants && next.variants.length === 1) {
+                              next.variants[0].price = e.target.value;
+                            }
+                            setFormData(next);
+                          }}
                           disabled={createMutation.isPending || updateMutation.isPending}
                         />
                       </div>
@@ -453,7 +469,13 @@ export function ProductManager() {
                         id="quantity"
                         type="number"
                         value={formData.quantity}
-                        onChange={(e) => setFormData({...formData, quantity: e.target.value})}
+                        onChange={(e) => {
+                          const next = { ...formData, quantity: e.target.value };
+                          if (next.variants && next.variants.length === 1) {
+                            next.variants[0].quantity = e.target.value;
+                          }
+                          setFormData(next);
+                        }}
                         disabled={createMutation.isPending || updateMutation.isPending}
                       />
                     </div>
@@ -472,9 +494,12 @@ export function ProductManager() {
                           <Input value={v.title} onChange={(e) => {
                             const next = { ...formData };
                             next.variants[idx].title = e.target.value;
-                            next.costPrice = '';
-                            next.sellingPrice = '';
-                            next.quantity = '';
+                            if (next.variants.length === 1) {
+                              // keep legacy fields in sync for single-variant products
+                              next.costPrice = String(next.variants[0].costPrice || '');
+                              next.sellingPrice = String(next.variants[0].price || '');
+                              next.quantity = String(next.variants[0].quantity || '');
+                            }
                             setFormData(next);
                           }} />
                         </div>
@@ -483,9 +508,11 @@ export function ProductManager() {
                           <Input value={v.packSize} onChange={(e) => {
                             const next = { ...formData };
                             next.variants[idx].packSize = e.target.value;
-                            next.costPrice = '';
-                            next.sellingPrice = '';
-                            next.quantity = '';
+                            if (next.variants.length === 1) {
+                              next.costPrice = String(next.variants[0].costPrice || '');
+                              next.sellingPrice = String(next.variants[0].price || '');
+                              next.quantity = String(next.variants[0].quantity || '');
+                            }
                             setFormData(next);
                           }} />
                         </div>
@@ -494,9 +521,9 @@ export function ProductManager() {
                           <Input value={v.costPrice} onChange={(e) => {
                             const next = { ...formData };
                             next.variants[idx].costPrice = e.target.value;
-                            next.costPrice = '';
-                            next.sellingPrice = '';
-                            next.quantity = '';
+                            if (next.variants.length === 1) {
+                              next.costPrice = e.target.value;
+                            }
                             setFormData(next);
                           }} />
                         </div>
@@ -505,9 +532,9 @@ export function ProductManager() {
                           <Input value={v.price} onChange={(e) => {
                             const next = { ...formData };
                             next.variants[idx].price = e.target.value;
-                            next.costPrice = '';
-                            next.sellingPrice = '';
-                            next.quantity = '';
+                            if (next.variants.length === 1) {
+                              next.sellingPrice = e.target.value;
+                            }
                             setFormData(next);
                           }} />
                         </div>
@@ -516,9 +543,9 @@ export function ProductManager() {
                           <Input value={v.quantity} onChange={(e) => {
                             const next = { ...formData };
                             next.variants[idx].quantity = e.target.value;
-                            next.costPrice = '';
-                            next.sellingPrice = '';
-                            next.quantity = '';
+                            if (next.variants.length === 1) {
+                              next.quantity = e.target.value;
+                            }
                             setFormData(next);
                           }} />
                         </div>
@@ -600,6 +627,9 @@ export function ProductManager() {
                   <div>
                     <CardTitle className="text-lg">{product.name}</CardTitle>
                     <p className="text-sm text-muted-foreground">{product.sku}</p>
+                    {product.variants && product.variants.length === 1 && (
+                      <p className="text-xs text-muted-foreground">Variant: {product.variants[0].title} • Pack: {product.variants[0].packSize}</p>
+                    )}
                   </div>
                   <Package className="h-5 w-5 text-primary" />
                 </div>
