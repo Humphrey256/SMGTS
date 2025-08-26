@@ -43,39 +43,45 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary px-4">
-      <Card className="w-full max-w-md shadow-strong">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl bg-gradient-primary bg-clip-text text-transparent flex items-center justify-center gap-2">
-            <LogIn className="h-6 w-6" />
-            Sales Management System
-          </CardTitle>
-          <p className="text-muted-foreground">Sign in to your account</p>
-        </CardHeader>
-        <CardContent>
+      <Card className="w-full max-w-md shadow-2xl rounded-lg overflow-hidden">
+        <div className="p-6 bg-gradient-to-r from-white/50 to-transparent">
+          <div className="text-center">
+            <div className="mx-auto mb-3 inline-flex items-center justify-center h-12 w-12 rounded-full bg-gradient-primary text-white">
+              <LogIn className="h-6 w-6" />
+            </div>
+            <CardTitle className="text-2xl font-bold">Sales Management</CardTitle>
+            <p className="text-sm text-muted-foreground">Sign in to continue to your dashboard</p>
+          </div>
+        </div>
+
+        <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
+            <div>
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
+                className="rounded-md"
               />
             </div>
-            <div className="space-y-2">
+
+            <div>
               <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="Your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading}
+                  className="rounded-md"
                 />
                 <Button
                   type="button"
@@ -85,25 +91,25 @@ export function LoginForm({ onLoginSuccess }: LoginFormProps) {
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
+
             <Button type="submit" className="w-full bg-gradient-primary" disabled={isLoading}>
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
-          
-          <div className="mt-6 p-4 bg-accent-light rounded-lg">
-            <p className="text-sm font-medium mb-2">Demo Accounts:</p>
-            <div className="space-y-1 text-xs">
-              <p><strong>Admin:</strong> admin@test.com / password123</p>
-              <p><strong>Agent:</strong> agent@test.com / password123</p>
-            </div>
+
+          <div className="mt-4 border-t pt-4 text-sm text-muted-foreground flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => toast({ title: 'Need help', description: 'Contact your administrator to reset your password.' })}
+              className="text-muted-foreground hover:underline"
+            >
+              Forgot password?
+            </button>
+            <span>Contact your administrator to create an account</span>
           </div>
         </CardContent>
       </Card>
