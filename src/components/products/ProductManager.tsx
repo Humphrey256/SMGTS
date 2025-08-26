@@ -13,14 +13,25 @@ import { Plus, Edit, Trash2, Search, Package, AlertTriangle, Lock } from "lucide
 import { formatUGX } from "@/lib/utils";
 import { config } from "@/config";
 
+interface ProductVariant {
+  _id?: string;
+  title: string;
+  packSize: number;
+  costPrice: number;
+  price: number;
+  quantity: number;
+}
+
 interface Product {
   _id: string;
   name: string;
   sku: string;
   category: string;
-  costPrice: number;
-  sellingPrice: number;
-  quantity: number;
+  // legacy fields (may be undefined) - prefer using `variants`
+  costPrice?: number;
+  sellingPrice?: number;
+  quantity?: number;
+  variants?: ProductVariant[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -227,12 +238,19 @@ export function ProductManager() {
       return;
     }
     
-    const productData = {
+    // Build a single-variant payload to satisfy the new Product model (variants[])
+    const variant = {
+      title: 'Default',
+      packSize: 1,
+      costPrice: parseFloat(formData.costPrice) || 0,
+      price: parseFloat(formData.sellingPrice) || 0,
+      quantity: parseInt(formData.quantity) || 0,
+    } as ProductVariant;
+
+    const productData: any = {
       name: formData.name,
       category: formData.category,
-      costPrice: parseFloat(formData.costPrice),
-      sellingPrice: parseFloat(formData.sellingPrice),
-      quantity: parseInt(formData.quantity)
+      variants: [variant]
     };
 
     if (editingProduct) {
@@ -252,13 +270,16 @@ export function ProductManager() {
       return;
     }
     
+    // pick primary variant if available, otherwise fall back to legacy fields
+    const primary = (product.variants && product.variants.length > 0) ? product.variants[0] : undefined;
+
     setEditingProduct(product);
     setFormData({
       name: product.name,
       category: product.category,
-      costPrice: product.costPrice.toString(),
-      sellingPrice: product.sellingPrice.toString(),
-      quantity: product.quantity.toString()
+      costPrice: (primary ? primary.costPrice : (product.costPrice ?? 0)).toString(),
+      sellingPrice: (primary ? primary.price : (product.sellingPrice ?? 0)).toString(),
+      quantity: (primary ? primary.quantity : (product.quantity ?? 0)).toString()
     });
     setIsDialogOpen(true);
   };
@@ -460,9 +481,15 @@ export function ProductManager() {
       {/* Products Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredProducts.map((product) => {
-          const stockStatus = getStockStatus(product.quantity);
-          const profit = product.sellingPrice - product.costPrice;
-          const profitMargin = ((profit / product.costPrice) * 100).toFixed(1);
+          // Prefer variant values when available
+          const primary = (product.variants && product.variants.length > 0) ? product.variants[0] : undefined;
+          const quantity = primary ? primary.quantity : (product.quantity ?? 0);
+          const costPrice = primary ? primary.costPrice : (product.costPrice ?? 0);
+          const sellingPrice = primary ? primary.price : (product.sellingPrice ?? 0);
+
+          const stockStatus = getStockStatus(quantity);
+          const profit = sellingPrice - costPrice;
+          const profitMargin = costPrice > 0 ? ((profit / costPrice) * 100).toFixed(1) : '0.0';
 
           return (
             <Card key={product._id} className="bg-gradient-card shadow-soft hover:shadow-medium transition-all duration-300">
@@ -481,11 +508,11 @@ export function ProductManager() {
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Cost:</span>
-                  <span className="font-medium">{formatUGX(product.costPrice)}</span>
+                  <span className="font-medium">{formatUGX(costPrice)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Price:</span>
-                  <span className="font-medium text-success">{formatUGX(product.sellingPrice)}</span>
+                  <span className="font-medium text-success">{formatUGX(sellingPrice)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Stock:</span>
@@ -494,9 +521,9 @@ export function ProductManager() {
                       variant={stockStatus.color === "destructive" ? "destructive" : "outline"}
                       className={stockStatus.color === "destructive" ? "bg-destructive text-destructive-foreground border-transparent" : ""}
                     >
-                      {product.quantity}
+                      {quantity}
                     </Badge>
-                    {product.quantity <= 10 && (
+                    {quantity <= 10 && (
                       <AlertTriangle className="h-4 w-4 text-destructive" />
                     )}
                   </div>

@@ -54,8 +54,8 @@ async function seed() {
         name: 'A4 Book',
         category: 'Books',
         variants: [
-          { title: 'A4 (dozen)', packSize: 12, costPrice: 1500, price: 22000, quantity: 120 },
-          { title: 'A4 (single)', packSize: 1, costPrice: 1500, price: 2000, quantity: 120 }
+          { title: 'A4 dozen', packSize: 12, costPrice: 1500, price: 22000, quantity: 120 },
+          { title: 'A4 single', packSize: 1, costPrice: 1500, price: 2000, quantity: 120 }
         ]
       },
       // Exercise books with explicit page variants at requested prices
@@ -63,8 +63,8 @@ async function seed() {
         name: 'Exercise Book',
         category: 'Books',
         variants: [
-          { title: '96 pages', packSize: 1, costPrice: 800, price: 10000, quantity: 150 },
-          { title: '48 pages', packSize: 1, costPrice: 350, price: 7000, quantity: 200 }
+          { title: '96 pages', packSize: 1, costPrice: 800, price: 1000, quantity: 150 },
+          { title: '48 pages', packSize: 1, costPrice: 350, price: 2000, quantity: 200 }
         ]
       },
       // Envelopes
