@@ -1,21 +1,36 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+export interface IProductVariant {
+  _id?: any;
+  sku?: string;
+  title: string; // e.g. "A4 - dozen" or "96 pages"
+  packSize: number; // number of base units per sale-unit (e.g. 12 for dozen)
+  costPrice: number; // cost per base unit
+  price: number; // price per sale-unit
+  quantity: number; // stored in base units
+}
+
 export interface IProduct extends Document {
   name: string;
   sku: string;
   category: string;
-  costPrice: number;
-  sellingPrice: number;
-  quantity: number;
+  variants: IProductVariant[];
 }
+
+const variantSchema = new Schema<IProductVariant>({
+  sku: { type: String },
+  title: { type: String, required: true },
+  packSize: { type: Number, required: true, default: 1 },
+  costPrice: { type: Number, required: true },
+  price: { type: Number, required: true },
+  quantity: { type: Number, required: true, min: 0 }
+}, { _id: true });
 
 const productSchema = new Schema<IProduct>({
   name: { type: String, required: true },
   sku: { type: String, unique: true }, // Remove required, will be auto-generated
   category: { type: String, required: true },
-  costPrice: { type: Number, required: true },
-  sellingPrice: { type: Number, required: true },
-  quantity: { type: Number, required: true, min: 0 }
+  variants: { type: [variantSchema], required: true, default: [] }
 }, { timestamps: true });
 
 // Auto-generate SKU before saving

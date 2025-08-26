@@ -9,7 +9,9 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "jest",
-    "seed": "tsx src/scripts/seed.ts"
+  "seed": "tsx src/scripts/seed.ts",
+  "migrate:variants": "tsx src/scripts/migrate-to-variants.ts",
+  "test:ci": "jest --runInBand"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -43,6 +45,7 @@
     "jest": "^29.6.1",
     "nodemon": "^3.0.1",
     "ts-jest": "^29.1.1",
+  "mongodb-memory-server": "^8.12.0",
     "tsx": "^3.14.0",
     "typescript": "^5.9.2"
   },

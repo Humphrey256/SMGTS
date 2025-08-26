@@ -1,10 +1,14 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
+
 interface ISaleItem {
   product: Types.ObjectId;
-  quantity: number;
-  priceAtSale: number; // sellingPrice snapshot
+  variantId: any; // reference to embedded variant _id
+  quantity: number; // sale-units (e.g. 2 dozens)
+  unitsSold: number; // computed base units (quantity * packSize)
+  unitPrice: number; // price per sale-unit at time of sale
   subtotal: number;
+  costAtSale: number; // cost per base unit at time of sale
 }
 
 export interface ISale extends Document {
@@ -16,9 +20,12 @@ export interface ISale extends Document {
 
 const saleItemSchema = new Schema<ISaleItem>({
   product: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+  variantId: { type: Schema.Types.ObjectId, required: false },
   quantity: { type: Number, required: true, min: 1 },
-  priceAtSale: { type: Number, required: true },
-  subtotal: { type: Number, required: true }
+  unitsSold: { type: Number, required: true, min: 1 },
+  unitPrice: { type: Number, required: true },
+  subtotal: { type: Number, required: true },
+  costAtSale: { type: Number, required: true }
 }, { _id: false });
 
 const saleSchema = new Schema<ISale>({

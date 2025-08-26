@@ -12,17 +12,27 @@ import { formatUGX } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { config } from '@/config';
 
+interface ProductVariant {
+  _id: string;
+  sku?: string;
+  title: string;
+  packSize: number;
+  costPrice: number;
+  price: number; // price per sale-unit
+  quantity: number; // in base units
+}
+
 interface Product {
   _id: string;
   name: string;
   sku: string;
-  sellingPrice: number;
-  quantity: number;
+  variants: ProductVariant[];
 }
 
 interface SaleItem {
   product: Product;
-  quantity: number;
+  variant: ProductVariant;
+  quantity: number; // sale-units
   subtotal: number;
 }
 
@@ -49,6 +59,7 @@ export function SalesForm() {
 
   const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
+  const [selectedVariantId, setSelectedVariantId] = useState("");
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
 
@@ -91,54 +102,49 @@ export function SalesForm() {
   }, [token, toast]);
 
   const selectedProduct = availableProducts.find(p => p._id === selectedProductId);
+  const selectedVariant = selectedProduct?.variants.find(v => v._id === selectedVariantId) as ProductVariant | undefined;
 
   const addSaleItem = () => {
-    if (!selectedProduct) return;
+    if (!selectedProduct || !selectedVariant) return;
 
-    const existingItem = saleItems.find(item => item.product._id === selectedProduct._id);
-    
+    // compute available sale-units from variant quantity (stored in base units)
+    const availableSaleUnits = Math.floor(selectedVariant.quantity / Math.max(1, selectedVariant.packSize));
+
+    const existingItem = saleItems.find(item => item.product._id === selectedProduct._id && item.variant._id === selectedVariant._id);
+
     if (existingItem) {
-      if (existingItem.quantity >= selectedProduct.quantity) {
-        toast({
-          title: "Error",
-          description: "Not enough stock available",
-          variant: "destructive"
-        });
+      if (existingItem.quantity >= availableSaleUnits) {
+        toast({ title: "Error", description: "Not enough stock available", variant: "destructive" });
         return;
       }
-      
-      setSaleItems(items =>
-        items.map(item =>
-          item.product._id === selectedProduct._id
-            ? {
-                ...item,
-                quantity: item.quantity + 1,
-                subtotal: (item.quantity + 1) * item.product.sellingPrice
-              }
-            : item
-        )
-      );
+      setSaleItems(items => items.map(item => item.product._id === selectedProduct._id && item.variant._id === selectedVariant._id
+        ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.variant.price }
+        : item
+      ));
     } else {
       const newItem: SaleItem = {
         product: selectedProduct,
+        variant: selectedVariant,
         quantity: 1,
-        subtotal: selectedProduct.sellingPrice
+        subtotal: selectedVariant.price
       };
       setSaleItems([...saleItems, newItem]);
     }
-    
+
     setSelectedProductId("");
+    setSelectedVariantId("");
   };
 
-  const updateQuantity = (productId: string, change: number) => {
+  const updateQuantity = (productId: string, variantId: string, change: number) => {
     setSaleItems(items =>
       items.map(item => {
-        if (item.product._id === productId) {
-          const newQuantity = Math.max(1, Math.min(item.quantity + change, item.product.quantity));
+        if (item.product._id === productId && item.variant._id === variantId) {
+          const availableSaleUnits = Math.floor(item.variant.quantity / Math.max(1, item.variant.packSize));
+          const newQuantity = Math.max(1, Math.min(item.quantity + change, availableSaleUnits));
           return {
             ...item,
             quantity: newQuantity,
-            subtotal: newQuantity * item.product.sellingPrice
+            subtotal: newQuantity * item.variant.price
           };
         }
         return item;
@@ -146,8 +152,8 @@ export function SalesForm() {
     );
   };
 
-  const removeSaleItem = (productId: string) => {
-    setSaleItems(items => items.filter(item => item.product._id !== productId));
+  const removeSaleItem = (productId: string, variantId?: string) => {
+    setSaleItems(items => items.filter(item => !(item.product._id === productId && (!variantId || item.variant._id === variantId))));
   };
 
   const totalAmount = saleItems.reduce((sum, item) => sum + item.subtotal, 0);
@@ -174,15 +180,14 @@ export function SalesForm() {
     setIsSubmitting(true);
 
     try {
-      const apiBase = import.meta.env.VITE_API_URL || "http://localhost:5000";
-      
-      // Prepare sale data for backend
+      const apiBase = config.apiUrl;
+
+      // Prepare sale data for backend (include variantId)
       const saleData = {
         items: saleItems.map(item => ({
           product: item.product._id,
-          quantity: item.quantity,
-          priceAtSale: item.product.sellingPrice,
-          subtotal: item.subtotal
+          variantId: item.variant._id,
+          quantity: item.quantity
         })),
         total: totalAmount,
         customer: customerName.trim() ? { name: customerName, phone: customerPhone } : undefined
@@ -256,7 +261,7 @@ export function SalesForm() {
       
       ITEMS:
       ${completedSale.items.map(item => 
-        `${item.product.name} x${item.quantity} @ ${formatUGX(item.product.sellingPrice)} = ${formatUGX(item.subtotal)}`
+        `${item.product.name} (${item.variant.title}) x${item.quantity} @ ${formatUGX(item.variant.price)} = ${formatUGX(item.subtotal)}`
       ).join('\n')}
       
       TOTAL: ${formatUGX(completedSale.total)}
@@ -291,7 +296,7 @@ export function SalesForm() {
         <p className="text-muted-foreground">Process a new sale and manage inventory</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+  <div className="grid gap-6 lg:grid-cols-2">
         {/* Left Column - Add Products */}
         <div className="space-y-6">
           <Card className="shadow-soft">
@@ -304,7 +309,7 @@ export function SalesForm() {
             <CardContent className="space-y-4">
               <div>
                 <Label>Select Product</Label>
-                <Select value={selectedProductId} onValueChange={setSelectedProductId} disabled={isLoadingProducts}>
+                <Select value={selectedProductId} onValueChange={(v) => { setSelectedProductId(v); setSelectedVariantId(""); }} disabled={isLoadingProducts}>
                   <SelectTrigger>
                     <SelectValue placeholder={isLoadingProducts ? "Loading products..." : "Choose a product"} />
                   </SelectTrigger>
@@ -314,7 +319,7 @@ export function SalesForm() {
                         <div className="flex items-center justify-between w-full">
                           <span>{product.name}</span>
                           <Badge variant="outline" className="ml-2">
-                            {formatUGX(product.sellingPrice)}
+                            {product.variants && product.variants.length > 0 ? formatUGX(product.variants[0].price) : ''}
                           </Badge>
                         </div>
                       </SelectItem>
@@ -322,16 +327,40 @@ export function SalesForm() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {selectedProduct && (
+                <div>
+                  <Label>Select Variant / Pack</Label>
+                  <Select value={selectedVariantId} onValueChange={setSelectedVariantId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={selectedProduct.variants.length ? "Choose a variant" : "No variants"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectedProduct.variants.map(v => (
+                        <SelectItem key={v._id} value={v._id}>
+                          <div className="flex items-center justify-between w-full">
+                            <div>
+                              <div className="font-medium">{v.title}</div>
+                              <div className="text-xs text-muted-foreground">Pack: {v.packSize} | Stock: {Math.floor(v.quantity / Math.max(1, v.packSize))} units</div>
+                            </div>
+                            <Badge variant="outline">{formatUGX(v.price)}</Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               
               {selectedProduct && (
                 <div className="p-3 bg-accent-light rounded-lg">
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="font-medium">{selectedProduct.name}</p>
-                      <p className="text-sm text-muted-foreground">Stock: {selectedProduct.quantity}</p>
+                      <p className="text-sm text-muted-foreground">Variants: {selectedProduct.variants.length}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-lg">{formatUGX(selectedProduct.sellingPrice)}</p>
+                      <p className="font-bold text-lg">{selectedVariant ? formatUGX(selectedVariant.price) : ''}</p>
                     </div>
                   </div>
                 </div>
@@ -391,17 +420,17 @@ export function SalesForm() {
               </div>
             ) : (
               <div className="space-y-4">
-                {saleItems.map((item) => (
-                  <div key={item.product._id} className="flex items-center justify-between p-3 border rounded-lg">
+                    {saleItems.map((item) => (
+                  <div key={`${item.product._id}-${item.variant._id}`} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex-1">
-                      <p className="font-medium">{item.product.name}</p>
-                      <p className="text-sm text-muted-foreground">{formatUGX(item.product.sellingPrice)} each</p>
+                      <p className="font-medium">{item.product.name} — {item.variant.title}</p>
+                      <p className="text-sm text-muted-foreground">{formatUGX(item.variant.price)} per {item.variant.packSize}</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => updateQuantity(item.product._id, -1)}
+                        onClick={() => updateQuantity(item.product._id, item.variant._id, -1)}
                         disabled={item.quantity <= 1}
                       >
                         <Minus className="h-3 w-3" />
@@ -410,8 +439,8 @@ export function SalesForm() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => updateQuantity(item.product._id, 1)}
-                        disabled={item.quantity >= item.product.quantity}
+                        onClick={() => updateQuantity(item.product._id, item.variant._id, 1)}
+                        disabled={item.quantity >= Math.floor(item.variant.quantity / Math.max(1, item.variant.packSize))}
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
@@ -421,7 +450,7 @@ export function SalesForm() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => removeSaleItem(item.product._id)}
+                        onClick={() => removeSaleItem(item.product._id, item.variant._id)}
                         className="text-destructive h-6 p-0"
                       >
                         Remove
