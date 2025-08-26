@@ -31,7 +31,46 @@ const productSchema = new Schema<IProduct>({
   sku: { type: String, unique: true }, // Remove required, will be auto-generated
   category: { type: String, required: true },
   variants: { type: [variantSchema], required: true, default: [] }
-}, { timestamps: true });
+}, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
+
+// Ensure there's always at least one variant (helps UI and legacy flows)
+productSchema.pre('validate', function(next) {
+  if (!this.variants || this.variants.length === 0) {
+    this.variants = [{ title: 'Default', packSize: 1, costPrice: 0, price: 0, quantity: 0 }];
+  }
+  next();
+});
+
+// Virtuals for convenience in the frontend/UI
+productSchema.virtual('primaryVariant').get(function(this: any) {
+  return (this.variants && this.variants.length > 0) ? this.variants[0] : null;
+});
+
+productSchema.virtual('primaryPrice').get(function(this: any) {
+  const p = this.variants && this.variants[0];
+  return p ? p.price : 0;
+});
+
+productSchema.virtual('primaryCostPrice').get(function(this: any) {
+  const p = this.variants && this.variants[0];
+  return p ? p.costPrice : 0;
+});
+
+productSchema.virtual('primarySaleUnits').get(function(this: any) {
+  const p = this.variants && this.variants[0];
+  if (!p) return 0;
+  return Math.floor(p.quantity / Math.max(1, p.packSize));
+});
+
+productSchema.virtual('totalBaseQuantity').get(function(this: any) {
+  if (!this.variants) return 0;
+  return this.variants.reduce((sum: number, v: any) => sum + (v.quantity || 0), 0);
+});
+
+productSchema.virtual('totalSaleUnits').get(function(this: any) {
+  if (!this.variants) return 0;
+  return this.variants.reduce((sum: number, v: any) => sum + Math.floor((v.quantity || 0) / Math.max(1, v.packSize)), 0);
+});
 
 // Auto-generate SKU before saving
 productSchema.pre('save', async function(next) {
