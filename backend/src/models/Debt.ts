@@ -5,7 +5,7 @@ export interface IDebt extends Document {
   amount: number;
   reason: string;
   issuer: Types.ObjectId; // reference to User
-  status: 'Pending' | 'Paid' | 'Rejected';
+  status: 'Pending' | 'Paid';
 }
 
 const debtSchema = new Schema<IDebt>({
@@ -13,7 +13,7 @@ const debtSchema = new Schema<IDebt>({
   amount: { type: Number, required: true, min: 0 },
   reason: { type: String, required: true },
   issuer: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  status: { type: String, enum: ['Pending', 'Paid', 'Rejected'], default: 'Pending' }
+  status: { type: String, enum: ['Pending', 'Paid'], default: 'Pending' }
 }, { timestamps: true });
 
 export const Debt = mongoose.model<IDebt>('Debt', debtSchema);

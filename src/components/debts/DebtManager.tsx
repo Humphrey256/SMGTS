@@ -19,7 +19,7 @@ interface Debt {
   reason: string;
   issuer: string;
   dateIssued: string;
-  status: "Pending" | "Paid" | "Rejected";
+  status: "Pending" | "Paid";
   agentEmail: string;
 }
 
@@ -101,7 +101,7 @@ export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
     })();
   };
 
-  const updateDebtStatus = (id: string, status: "Paid" | "Rejected") => {
+  const updateDebtStatus = (id: string, status: "Paid") => {
     (async () => {
       try {
         const res = await fetch(`${apiBase}/api/debts/${id}/status`, {
@@ -122,7 +122,6 @@ export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Paid": return "success";
-      case "Rejected": return "destructive";
       default: return "warning";
     }
   };
@@ -130,7 +129,6 @@ export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "Paid": return CheckCircle;
-      case "Rejected": return XCircle;
       default: return Clock;
     }
   };
@@ -333,15 +331,6 @@ export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
                           Approve
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateDebtStatus(debt.id, "Rejected")}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <XCircle className="h-4 w-4 mr-1" />
-                          Reject
                         </Button>
                       </div>
                     )}

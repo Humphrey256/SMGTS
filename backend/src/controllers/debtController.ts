@@ -20,6 +20,10 @@ export async function listDebts(req: AuthRequest, res: Response) {
 
 export async function updateDebtStatus(req: AuthRequest, res: Response) {
   const { status } = req.body;
+  // allow only accepted status values
+  if (!['Pending', 'Paid'].includes(status)) {
+    return res.status(400).json({ message: 'Invalid status value' });
+  }
   const debt = await Debt.findById(req.params.id);
   if (!debt) return res.status(404).json({ message: 'Not found' });
 
