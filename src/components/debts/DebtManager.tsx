@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/contexts/AuthContext';
+import { config } from '@/config';
 import { Plus, CreditCard, CheckCircle, XCircle, Clock, Search } from "lucide-react";
 import { formatUGX } from "@/lib/utils";
 
@@ -28,34 +30,38 @@ interface DebtManagerProps {
 
 export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
   const { toast } = useToast();
-  
-  const [debts, setDebts] = useState<Debt[]>([
-    {
-      id: "1",
-      title: "Transportation Advance",
-      amount: 150,
-      reason: "Need advance for client meeting transportation",
-      issuer: "john.doe@company.com",
-      dateIssued: "2024-01-15",
-      status: "Pending",
-      agentEmail: "john.doe@company.com"
-    },
-    {
-      id: "2", 
-      title: "Equipment Purchase",
-      amount: 200,
-      reason: "Purchase office supplies for sales presentations",
-      issuer: "jane.smith@company.com",
-      dateIssued: "2024-01-10",
-      status: "Paid",
-      agentEmail: "jane.smith@company.com"
-    }
-  ]);
+  const { token, user } = useAuth() as any;
+  const apiBase = config.apiUrl;
+
+  const [debts, setDebts] = useState<Debt[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!token) return;
+      setLoading(true);
+      try {
+        const res = await fetch(`${apiBase}/api/debts`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) throw new Error('Failed to load debts');
+        const data = await res.json();
+        if (!mounted) return;
+        setDebts(data.map((d: any) => formatDebt(d)));
+      } catch (err: any) {
+        if (!mounted) return;
+        setError(err.message || 'Error loading debts');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [token]);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
-    title: "",
+    clientName: "",
     amount: "",
     reason: ""
   });
@@ -71,38 +77,46 @@ export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const newDebt: Debt = {
-      id: Date.now().toString(),
-      title: formData.title,
-      amount: parseFloat(formData.amount),
-      reason: formData.reason,
-      issuer: userEmail,
-      dateIssued: new Date().toISOString().split('T')[0],
-      status: "Pending",
-      agentEmail: userEmail
-    };
-
-    setDebts([newDebt, ...debts]);
-    
-    toast({
-      title: "Success",
-      description: "Debt request submitted successfully",
-    });
-
-    setFormData({ title: "", amount: "", reason: "" });
-    setIsDialogOpen(false);
+    (async () => {
+      try {
+        const body = {
+          title: formData.clientName,
+          amount: parseFloat(formData.amount),
+          reason: formData.reason
+        };
+        const res = await fetch(`${apiBase}/api/debts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error('Failed to create debt');
+        const created = await res.json();
+  setDebts(prev => [formatDebt(created), ...prev]);
+  toast({ title: 'Success', description: 'Debt request submitted successfully' });
+  setFormData({ clientName: '', amount: '', reason: '' });
+        setIsDialogOpen(false);
+      } catch (err: any) {
+        toast({ title: 'Error', description: err.message || 'Could not create debt' });
+      }
+    })();
   };
 
   const updateDebtStatus = (id: string, status: "Paid" | "Rejected") => {
-    setDebts(debts.map(debt => 
-      debt.id === id ? { ...debt, status } : debt
-    ));
-    
-    toast({
-      title: "Success",
-      description: `Debt marked as ${status.toLowerCase()}`,
-    });
+    (async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/debts/${id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ status })
+        });
+        if (!res.ok) throw new Error('Failed to update status');
+        const updated = await res.json();
+        setDebts(prev => prev.map(d => d.id === id ? formatDebt(updated) : d));
+        toast({ title: 'Success', description: `Debt marked as ${status.toLowerCase()}` });
+      } catch (err: any) {
+        toast({ title: 'Error', description: err.message || 'Could not update status' });
+      }
+    })();
   };
 
   const getStatusColor = (status: string) => {
@@ -148,16 +162,16 @@ export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>New Debt Request</DialogTitle>
+                <DialogTitle>New Debt (business owes client)</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label htmlFor="title">Title</Label>
+                  <Label htmlFor="clientName">Client Name</Label>
                   <Input
-                    id="title"
-                    placeholder="e.g., Transportation Advance"
-                    value={formData.title}
-                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    id="clientName"
+                    placeholder="e.g., John Doe or ACME Ltd"
+                    value={formData.clientName}
+                    onChange={(e) => setFormData({...formData, clientName: e.target.value})}
                     required
                   />
                 </div>
@@ -232,7 +246,7 @@ export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
         </Card>
       </div>
 
-      {/* Search */}
+  {/* Search */}
       <Card className="shadow-soft">
         <CardContent className="p-4">
           <div className="relative">
@@ -246,6 +260,9 @@ export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
           </div>
         </CardContent>
       </Card>
+
+  {loading && <div className="text-sm text-muted-foreground">Loading debts...</div>}
+  {error && <div className="text-sm text-destructive">{error}</div>}
 
       {/* Debts List */}
       <div className="space-y-4">
@@ -337,4 +354,18 @@ export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
       </div>
     </div>
   );
+}
+
+// Helper: convert backend debt to frontend Debt type
+function formatDebt(d: any): Debt {
+  return {
+    id: d._id,
+    title: d.title,
+    amount: d.amount,
+    reason: d.reason,
+    issuer: d.issuer?.email || d.issuer,
+    dateIssued: new Date(d.createdAt).toISOString().split('T')[0],
+    status: d.status,
+    agentEmail: d.issuer?.email || d.issuer
+  };
 }
