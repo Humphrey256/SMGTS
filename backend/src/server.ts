@@ -16,9 +16,11 @@ const app = express();
 
 // Middleware
 app.use(helmet());
-// Allow multiple origins and handle non-browser requests gracefully
-app.use(cors({ origin: true, credentials: true }));
-// Allow all origins (reflect the request origin)
+// Configure CORS with specific allowed origins
+app.use(cors({ 
+  origin: ENV.CLIENT_ORIGINS,
+  credentials: true 
+}));
 app.use(express.json());
 app.use(compression());
 app.use(morgan('dev'));
