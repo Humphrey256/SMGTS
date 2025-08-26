@@ -42,6 +42,27 @@ export function Analytics() {
   const salesData = data?.salesData ?? [];
   const topProducts = data?.topProducts ?? [];
 
+  // lightweight overview for things like low-stock and today's sales
+  const { data: overview } = useQuery({
+    queryKey: ['analytics-overview'],
+    queryFn: async () => {
+      const res = await fetch(`${apiBase}/api/analytics`);
+      if (!res.ok) throw new Error('Failed to load analytics overview');
+      return res.json() as Promise<{
+        totalSales: number;
+        productsLowStock: number;
+        totalProducts: number;
+        totalRevenue: number;
+        todaySales: number;
+        totalProfit: number;
+      }>;
+    },
+    staleTime: 30_000,
+  });
+
+  const lowStockCount = overview?.productsLowStock ?? 0;
+  const todaySalesCount = overview?.todaySales ?? 0;
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -210,22 +231,27 @@ export function Analytics() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
             <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-lg">
-              <h4 className="font-medium text-emerald-800 mb-2">✅ Strong Performance</h4>
+              <h4 className="font-medium text-emerald-800 mb-2">Revenue Growth</h4>
               <p className="text-sm text-emerald-700">
-                Sales increased by {monthlyStats.growthRate}% this month, exceeding targets.
+                {monthlyStats.growthRate >= 0 ? 'Up' : 'Down'} {Math.abs(monthlyStats.growthRate)}% vs previous period — {formatUGX(monthlyStats.totalSales)} revenue
               </p>
             </div>
-            <div className="p-4 bg-amber-50 border border-amber-100 rounded-lg">
-              <h4 className="font-medium text-amber-800 mb-2">⚠️ Attention Needed</h4>
-              <p className="text-sm text-amber-700">
-                Some products are running low on stock. Consider restocking soon.
+            <div className={`p-4 ${lowStockCount > 0 ? 'bg-destructive/10 border-destructive/20' : 'bg-emerald-50 border-emerald-100'} border rounded-lg`}>
+              <h4 className={`${lowStockCount > 0 ? 'text-destructive' : 'text-emerald-800'} font-medium mb-2`}>{lowStockCount > 0 ? 'Low Stock Alert' : 'Healthy Inventory'}</h4>
+              <p className={`text-sm ${lowStockCount > 0 ? 'text-destructive' : 'text-emerald-700'}`}>
+                {lowStockCount > 0 ? `${lowStockCount} products need restocking` : 'All products are above low-stock thresholds.'}
               </p>
             </div>
             <div className="p-4 bg-sky-50 border border-sky-100 rounded-lg">
-              <h4 className="font-medium text-sky-800 mb-2">💡 Opportunity</h4>
-              <p className="text-sm text-sky-700">
-                High-margin products are performing well. Focus marketing efforts here.
-              </p>
+              <h4 className="font-medium text-sky-800 mb-2">Top Product</h4>
+              {topProducts.length > 0 ? (
+                <>
+                  <p className="text-sm text-sky-700">{topProducts[0].name}</p>
+                  <p className="text-xs text-muted-foreground">Revenue: {formatUGX(topProducts[0].revenue)} — Profit: {formatUGX(topProducts[0].profit)}</p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">No sales yet</p>
+              )}
             </div>
           </div>
         </CardContent>
