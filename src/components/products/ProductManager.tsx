@@ -385,7 +385,7 @@ export function ProductManager() {
                 Add Product
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-4xl w-full max-h-[80vh] overflow-auto">
               <DialogHeader>
                 <DialogTitle>
                   {editingProduct ? "Edit Product" : "Add New Product"}
@@ -423,14 +423,13 @@ export function ProductManager() {
                   <div>
                     <Label htmlFor="costPrice">Cost Price (UGX)</Label>
                     <Input
-                      id="costPrice"
-                      type="number"
-                      step="0.01"
-                      value={formData.costPrice}
-                      onChange={(e) => setFormData({...formData, costPrice: e.target.value})}
-                      required
-                      disabled={createMutation.isPending || updateMutation.isPending}
-                    />
+                        id="costPrice"
+                        type="number"
+                        step="0.01"
+                        value={formData.costPrice}
+                        onChange={(e) => setFormData({...formData, costPrice: e.target.value})}
+                        disabled={createMutation.isPending || updateMutation.isPending}
+                      />
                   </div>
                   <div>
                     <Label htmlFor="sellingPrice">Selling Price (UGX)</Label>
@@ -440,7 +439,6 @@ export function ProductManager() {
                       step="0.01"
                       value={formData.sellingPrice}
                       onChange={(e) => setFormData({...formData, sellingPrice: e.target.value})}
-                      required
                       disabled={createMutation.isPending || updateMutation.isPending}
                     />
                   </div>
@@ -452,7 +450,6 @@ export function ProductManager() {
                     type="number"
                     value={formData.quantity}
                     onChange={(e) => setFormData({...formData, quantity: e.target.value})}
-                    required
                     disabled={createMutation.isPending || updateMutation.isPending}
                   />
                 </div>
