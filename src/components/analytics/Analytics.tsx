@@ -209,21 +209,21 @@ export function Analytics() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="p-4 bg-success-light rounded-lg">
-              <h4 className="font-medium text-success-foreground mb-2">✅ Strong Performance</h4>
-              <p className="text-sm text-success-foreground/80">
+            <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-lg">
+              <h4 className="font-medium text-emerald-800 mb-2">✅ Strong Performance</h4>
+              <p className="text-sm text-emerald-700">
                 Sales increased by {monthlyStats.growthRate}% this month, exceeding targets.
               </p>
             </div>
-            <div className="p-4 bg-warning-light rounded-lg">
-              <h4 className="font-medium text-warning-foreground mb-2">⚠️ Attention Needed</h4>
-              <p className="text-sm text-warning-foreground/80">
+            <div className="p-4 bg-amber-50 border border-amber-100 rounded-lg">
+              <h4 className="font-medium text-amber-800 mb-2">⚠️ Attention Needed</h4>
+              <p className="text-sm text-amber-700">
                 Some products are running low on stock. Consider restocking soon.
               </p>
             </div>
-            <div className="p-4 bg-accent-light rounded-lg">
-              <h4 className="font-medium text-accent-foreground mb-2">💡 Opportunity</h4>
-              <p className="text-sm text-accent-foreground/80">
+            <div className="p-4 bg-sky-50 border border-sky-100 rounded-lg">
+              <h4 className="font-medium text-sky-800 mb-2">💡 Opportunity</h4>
+              <p className="text-sm text-sky-700">
                 High-margin products are performing well. Focus marketing efforts here.
               </p>
             </div>
