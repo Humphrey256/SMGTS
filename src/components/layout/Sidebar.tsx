@@ -30,7 +30,7 @@ export function Sidebar({ activeView, onViewChange, userRole, userEmail, onLogou
     { id: "sales", label: "Create Sale", icon: ShoppingCart, roles: ["admin", "agent"] },
     { id: "analytics", label: "Analytics", icon: TrendingUp, roles: ["admin", "agent"] },
     { id: "debts", label: "Debts", icon: CreditCard, roles: ["admin", "agent"] },
-    { id: "users", label: "Users", icon: Users, roles: ["admin"] },
+  // users list removed from sidebar per request
   ];
 
   const filteredMenuItems = menuItems.filter(item => item.roles.includes(userRole));
