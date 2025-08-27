@@ -49,11 +49,18 @@ export async function createSale(req: AuthRequest, res: Response) {
       const subtotal = unitPrice * item.quantity;
       const costAtSale = variant.costPrice; // cost per base unit
 
-      saleItems.push({ product: product._id, variantId: variant._id, quantity: item.quantity, unitsSold, unitPrice, subtotal, costAtSale });
+      // compute item cost and profit
+      const itemCost = (costAtSale || 0) * unitsSold; // costAtSale is per base unit
+      const itemProfit = subtotal - itemCost;
+
+      saleItems.push({ product: product._id, variantId: variant._id, quantity: item.quantity, unitsSold, unitPrice, subtotal, costAtSale, itemCost, itemProfit });
       total += subtotal;
+      // accumulate profit
+      // we'll compute totalProfit after loop to persist on sale
     }
 
-    const sale = await Sale.create({ items: saleItems, total, customer, user: req.user!._id });
+    const totalProfit = saleItems.reduce((s, it) => s + (it.itemProfit || 0), 0);
+    const sale = await Sale.create({ items: saleItems, total, totalProfit, customer, user: req.user!._id });
     res.status(201).json(sale);
   } catch (err) {
     console.error('createSale error', err);

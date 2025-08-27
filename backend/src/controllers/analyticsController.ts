@@ -23,22 +23,46 @@ export async function getAnalytics(_req: Request, res: Response) {
     startOfToday.setHours(0, 0, 0, 0);
     const todaySales = await Sale.countDocuments({ createdAt: { $gte: startOfToday } });
 
-    // Approximate total profit using current product costPrice
-    // Note: For precise historical profit, store costAtSale in each sale item.
+    // Prefer stored profit fields on sales if present (itemProfit and totalProfit)
+    // Fallback to approximate calculation using current product costPrice when missing.
     const profitAgg = await Sale.aggregate([
-      { $unwind: '$items' },
-      { $lookup: { from: 'products', localField: 'items.product', foreignField: '_id', as: 'prod' } },
-      { $unwind: '$prod' },
-      {
-        $group: {
-          _id: null,
-          totalProfit: {
-            $sum: { $subtract: ['$items.subtotal', { $multiply: ['$items.quantity', '$prod.costPrice'] }] }
+      { $group: { _id: null, profitFromTotal: { $sum: '$totalProfit' }, countWithProfit: { $sum: { $cond: [{ $gt: ['$totalProfit', 0] }, 1, 0] } } } }
+    ]);
+    let totalProfit = profitAgg[0]?.profitFromTotal || 0;
+
+    if (!totalProfit) {
+      // fallback: compute using itemProfit where available or compute using product.costPrice
+      const fallbackAgg = await Sale.aggregate([
+        { $unwind: '$items' },
+        {
+          $group: {
+            _id: null,
+            sumItemProfit: { $sum: { $ifNull: ['$items.itemProfit', null] } },
+            hasItemProfit: { $sum: { $cond: [{ $ifNull: ['$items.itemProfit', false] }, 1, 0] } }
           }
         }
+      ]);
+
+      if (fallbackAgg[0] && fallbackAgg[0].hasItemProfit) {
+        totalProfit = fallbackAgg[0].sumItemProfit || 0;
+      } else {
+        // last resort: approximate using current product costPrice
+        const approxAgg = await Sale.aggregate([
+          { $unwind: '$items' },
+          { $lookup: { from: 'products', localField: 'items.product', foreignField: '_id', as: 'prod' } },
+          { $unwind: '$prod' },
+          {
+            $group: {
+              _id: null,
+              totalProfit: {
+                $sum: { $subtract: ['$items.subtotal', { $multiply: ['$items.quantity', '$prod.costPrice'] }] }
+              }
+            }
+          }
+        ]);
+        totalProfit = approxAgg[0]?.totalProfit || 0;
       }
-    ]);
-    const totalProfit = profitAgg[0]?.totalProfit || 0;
+    }
 
     res.json({ totalSales, productsLowStock, totalProducts, totalRevenue, todaySales, totalProfit });
   } catch (err) {
@@ -117,22 +141,40 @@ export async function getAnalyticsReport(req: Request, res: Response) {
       const revenue = revenueAndOrders[0]?.revenue || 0;
       const orders = revenueAndOrders[0]?.orders || 0;
 
-      // Approximate profit using current product costPrice
+      // Prefer stored itemProfit where available
       const profitAgg = await Sale.aggregate([
         { $match: match },
         { $unwind: '$items' },
-        { $lookup: { from: 'products', localField: 'items.product', foreignField: '_id', as: 'prod' } },
-        { $unwind: '$prod' },
         {
           $group: {
             _id: null,
-            totalProfit: {
-              $sum: { $subtract: ['$items.subtotal', { $multiply: ['$items.quantity', '$prod.costPrice'] }] }
-            }
+            sumItemProfit: { $sum: { $ifNull: ['$items.itemProfit', null] } },
+            hasItemProfit: { $sum: { $cond: [{ $ifNull: ['$items.itemProfit', false] }, 1, 0] } }
           }
         }
       ]);
-      const profit = profitAgg[0]?.totalProfit || 0;
+
+      let profit = 0;
+      if (profitAgg[0] && profitAgg[0].hasItemProfit) {
+        profit = profitAgg[0].sumItemProfit || 0;
+      } else {
+        // fallback to approximate using current product costPrice
+        const approxAgg = await Sale.aggregate([
+          { $match: match },
+          { $unwind: '$items' },
+          { $lookup: { from: 'products', localField: 'items.product', foreignField: '_id', as: 'prod' } },
+          { $unwind: '$prod' },
+          {
+            $group: {
+              _id: null,
+              totalProfit: {
+                $sum: { $subtract: ['$items.subtotal', { $multiply: ['$items.quantity', '$prod.costPrice'] }] }
+              }
+            }
+          }
+        ]);
+        profit = approxAgg[0]?.totalProfit || 0;
+      }
 
       return { revenue, orders, profit };
     };
