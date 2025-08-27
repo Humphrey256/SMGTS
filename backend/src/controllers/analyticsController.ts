@@ -6,9 +6,11 @@ export async function getAnalytics(_req: Request, res: Response) {
   try {
     console.log('Analytics endpoint hit - no auth required');
     // Counts
+    // productsLowStock should check variant quantities (quantity is stored on variants)
+    const lowStockThreshold = 10;
     const [totalSales, productsLowStock, totalProducts] = await Promise.all([
       Sale.countDocuments(),
-      Product.countDocuments({ quantity: { $lte: 10 } }),
+      Product.countDocuments({ 'variants.quantity': { $lte: lowStockThreshold } }),
       Product.countDocuments()
     ]);
 
