@@ -23,17 +23,16 @@ export async function getAnalytics(_req: Request, res: Response) {
     startOfToday.setHours(0, 0, 0, 0);
     const todaySales = await Sale.countDocuments({ createdAt: { $gte: startOfToday } });
 
-    // Approximate total profit using current product costPrice
-    // Note: For precise historical profit, store costAtSale in each sale item.
+    // Compute total profit using stored sale item fields when available:
+    // itemCost = unitsSold * costAtSale (costAtSale stored per base unit),
+    // profit per item = subtotal - itemCost
     const profitAgg = await Sale.aggregate([
       { $unwind: '$items' },
-      { $lookup: { from: 'products', localField: 'items.product', foreignField: '_id', as: 'prod' } },
-      { $unwind: '$prod' },
       {
         $group: {
           _id: null,
           totalProfit: {
-            $sum: { $subtract: ['$items.subtotal', { $multiply: ['$items.quantity', '$prod.costPrice'] }] }
+            $sum: { $subtract: ['$items.subtotal', { $multiply: ['$items.unitsSold', '$items.costAtSale'] }] }
           }
         }
       }
@@ -117,17 +116,15 @@ export async function getAnalyticsReport(req: Request, res: Response) {
       const revenue = revenueAndOrders[0]?.revenue || 0;
       const orders = revenueAndOrders[0]?.orders || 0;
 
-      // Approximate profit using current product costPrice
+      // Compute profit using stored sale item fields (unitsSold & costAtSale)
       const profitAgg = await Sale.aggregate([
         { $match: match },
         { $unwind: '$items' },
-        { $lookup: { from: 'products', localField: 'items.product', foreignField: '_id', as: 'prod' } },
-        { $unwind: '$prod' },
         {
           $group: {
             _id: null,
             totalProfit: {
-              $sum: { $subtract: ['$items.subtotal', { $multiply: ['$items.quantity', '$prod.costPrice'] }] }
+              $sum: { $subtract: ['$items.subtotal', { $multiply: ['$items.unitsSold', '$items.costAtSale'] }] }
             }
           }
         }
@@ -152,14 +149,12 @@ export async function getAnalyticsReport(req: Request, res: Response) {
     const trend = await Sale.aggregate([
       { $match: { createdAt: { $gte: sixMonthsAgo } } },
       { $unwind: '$items' },
-      { $lookup: { from: 'products', localField: 'items.product', foreignField: '_id', as: 'prod' } },
-      { $unwind: '$prod' },
       {
         $group: {
           _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } },
           sales: { $sum: '$total' },
           profit: {
-            $sum: { $subtract: ['$items.subtotal', { $multiply: ['$items.quantity', '$prod.costPrice'] }] }
+            $sum: { $subtract: ['$items.subtotal', { $multiply: ['$items.unitsSold', '$items.costAtSale'] }] }
           }
         }
       },
@@ -182,17 +177,12 @@ export async function getAnalyticsReport(req: Request, res: Response) {
         $group: {
           _id: '$items.product',
           salesQty: { $sum: '$items.quantity' },
-          revenue: { $sum: '$items.subtotal' }
+          revenue: { $sum: '$items.subtotal' },
+          profit: { $sum: { $subtract: ['$items.subtotal', { $multiply: ['$items.unitsSold', '$items.costAtSale'] }] } }
         }
       },
       { $lookup: { from: 'products', localField: '_id', foreignField: '_id', as: 'product' } },
       { $unwind: '$product' },
-      {
-        $addFields: {
-          profit: { $subtract: ['$revenue', { $multiply: ['$salesQty', '$product.costPrice'] }] },
-          name: '$product.name'
-        }
-      },
       { $sort: { salesQty: -1, revenue: -1 } },
       { $limit: 5 }
     ]);
