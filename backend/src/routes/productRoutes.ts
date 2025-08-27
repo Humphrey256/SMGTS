@@ -7,8 +7,8 @@ const router = Router();
 // Public: list products (used by POS / sales pages)
 router.get('/', listProducts);
 
-// Protected endpoints
-router.get('/low-stock', protect, getLowStockProducts);
+// Low-stock list is public (used by notifier and dashboards)
+router.get('/low-stock', getLowStockProducts);
 router.post('/', protect, authorize('admin'), createProduct);
 router.put('/:id', protect, authorize('admin'), updateProduct);
 router.delete('/:id', protect, authorize('admin'), deleteProduct);

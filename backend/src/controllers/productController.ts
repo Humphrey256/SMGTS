@@ -33,9 +33,20 @@ export async function deleteProduct(req: Request, res: Response) {
 
 export async function getLowStockProducts(_req: Request, res: Response) {
   try {
-    // Products with quantity <= 10 are considered low stock
-    const lowStockProducts = await Product.find({ quantity: { $lte: 10 } }).sort('quantity');
-    res.json(lowStockProducts);
+    // Products with any variant quantity <= threshold are considered low stock
+    const lowStockThreshold = 10;
+    const products = await Product.find({ 'variants.quantity': { $lte: lowStockThreshold } }).lean();
+
+    // For convenience return only the low variants for each product so the frontend can show examples
+    const mapped = products.map((p: any) => ({
+      _id: p._id,
+      name: p.name,
+      sku: p.sku,
+      category: p.category,
+      variants: (p.variants || []).filter((v: any) => Number(v.quantity) <= lowStockThreshold)
+    }));
+
+    res.json(mapped);
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
