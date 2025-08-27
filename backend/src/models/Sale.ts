@@ -9,8 +9,6 @@ interface ISaleItem {
   unitPrice: number; // price per sale-unit at time of sale
   subtotal: number;
   costAtSale: number; // cost per base unit at time of sale
-  itemCost?: number; // total cost for this item (unitsSold * costAtSale)
-  itemProfit?: number; // subtotal - itemCost
 }
 
 export interface ISale extends Document {
@@ -27,15 +25,12 @@ const saleItemSchema = new Schema<ISaleItem>({
   unitsSold: { type: Number, required: true, min: 1 },
   unitPrice: { type: Number, required: true },
   subtotal: { type: Number, required: true },
-  costAtSale: { type: Number, required: true },
-  itemCost: { type: Number, required: false, default: 0 },
-  itemProfit: { type: Number, required: false, default: 0 }
+  costAtSale: { type: Number, required: true }
 }, { _id: false });
 
 const saleSchema = new Schema<ISale>({
   items: { type: [saleItemSchema], required: true },
   total: { type: Number, required: true },
-  totalProfit: { type: Number, required: false, default: 0 },
   customer: { name: String, phone: String },
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true }
 }, { timestamps: true });
