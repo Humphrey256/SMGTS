@@ -45,6 +45,25 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 });
 
 // Start
-connectDB().then(() => {
-  app.listen(ENV.PORT, () => console.log(`Server running on port ${ENV.PORT}`));
+// Global process handlers to surface unexpected crashes in deploy logs
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
 });
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
+  process.exit(1);
+});
+
+async function start() {
+  try {
+    await connectDB();
+    app.listen(ENV.PORT, () => console.log(`Server running on port ${ENV.PORT}`));
+  } catch (err) {
+    console.error('Failed to start server:', (err as any)?.message ?? err);
+    process.exit(1);
+  }
+}
+
+start();
