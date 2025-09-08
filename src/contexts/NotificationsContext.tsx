@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface AppNotification {
   id: string;
@@ -10,8 +10,29 @@ export interface AppNotification {
 
 const NotificationsContext = createContext<any>(null);
 
+const STORAGE_KEY = 'smgts_notifications_v1';
+
 export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [items, setItems] = useState<AppNotification[]>([]);
+  const [items, setItems] = useState<AppNotification[]>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw) as AppNotification[];
+      // Ensure createdAt numbers
+      return parsed.map(p => ({ ...p, createdAt: Number(p.createdAt || Date.now()) }));
+    } catch (e) {
+      return [];
+    }
+  });
+
+  // Persist to localStorage whenever items change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    } catch (e) {
+      // ignore storage errors
+    }
+  }, [items]);
 
   function push(notification: Omit<AppNotification, 'id' | 'createdAt' | 'read'>) {
     const n: AppNotification = {
@@ -25,7 +46,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   }
 
   function markRead(id: string) {
-    setItems(prev => prev.map(i => i.id === id ? { ...i, read: true } : i));
+  setItems(prev => prev.map(i => i.id === id ? { ...i, read: true } : i));
   }
 
   function remove(id: string) {
