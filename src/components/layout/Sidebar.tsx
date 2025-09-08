@@ -81,7 +81,7 @@ export function Sidebar({ activeView, onViewChange, userRole, userEmail, onLogou
           <aside className="relative w-64 bg-card border-r border-border shadow-xl flex flex-col h-screen">
             <div className="p-4 border-b border-border flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold bg-gradient-primary bg-clip-text text-transparent">Sales Manager</h2>
+                <h2 className="text-lg font-bold text-white">Sales Manager</h2>
                 <p className="text-xs text-muted-foreground">Business Management</p>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)}>

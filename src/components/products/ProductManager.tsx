@@ -550,7 +550,7 @@ export function ProductManager() {
                           }} />
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" onClick={() => {
+                          <Button type="button" variant="outline" size="sm" onClick={() => {
                             const next = { ...formData };
                             next.variants.splice(idx, 1);
                             if (next.variants.length === 0) next.variants.push({ title: 'Default', packSize: '1', costPrice: '', price: '', quantity: '' });
@@ -559,7 +559,7 @@ export function ProductManager() {
                         </div>
                       </div>
                     ))}
-                    <Button variant="ghost" onClick={() => {
+                    <Button type="button" variant="ghost" onClick={() => {
                       const next = { ...formData };
                       next.variants.push({ title: 'New variant', packSize: '1', costPrice: '', price: '', quantity: '' });
                       // Clear legacy single-variant fields when variants are used
