@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { config } from '@/config';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatUGX } from '@/lib/utils';
+import { formatUGX, formatUSh } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 interface Props {
   saleId: string;
@@ -29,36 +30,40 @@ export function SoldProductsView({ saleId }: Props) {
   if (isLoading) return <div>Loading sale...</div>;
   if (isError || !data) return <div>Failed to load sale</div>;
 
+  const saleDate = data.createdAt ? new Date(data.createdAt).toLocaleString() : null;
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Sold Products</h1>
-          <p className="text-muted-foreground">Sale ID: {saleId}</p>
+          {saleDate && <p className="text-sm text-muted-foreground">{saleDate}</p>}
+        </div>
+        <div className="flex items-center space-x-4">
+          <div className="text-right">
+            <div className="text-sm text-muted-foreground">Sale Total</div>
+            <div className="text-xl font-bold">{formatUSh(data.total)}</div>
+          </div>
+          <Button variant="outline" onClick={() => window.history.back()}>Back</Button>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Items Sold</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {data.items.map((it: any, idx: number) => (
-              <div key={idx} className="flex justify-between">
-                <div>
-                  <div className="font-medium">{it.product?.name ?? 'Unknown'}</div>
-                  <div className="text-sm text-muted-foreground">Qty: {it.quantity} • UnitsSold: {it.unitsSold}</div>
-                </div>
-                <div className="text-right">
-                  <div>{formatUGX(it.unitPrice)}</div>
-                  <div className="text-sm text-muted-foreground">Subtotal: {formatUGX(it.subtotal)}</div>
-                </div>
+      <div className="grid gap-3">
+        {data.items.map((it: any, idx: number) => (
+          <Card key={idx} className="p-3">
+            <CardContent className="flex items-center justify-between">
+              <div>
+                <div className="font-medium text-lg">{it.product?.name ?? 'Unknown'}</div>
+                <div className="text-sm text-muted-foreground">Qty: {it.quantity} — Units: {it.unitsSold}</div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              <div className="text-right">
+                <div className="font-medium">{formatUGX(it.unitPrice)}</div>
+                <div className="text-sm text-muted-foreground">Subtotal: {formatUGX(it.subtotal)}</div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
