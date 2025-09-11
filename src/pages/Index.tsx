@@ -5,6 +5,7 @@ import { ProductManager } from "@/components/products/ProductManager";
 import { SalesForm } from "@/components/sales/SalesForm";
 import { Analytics } from "@/components/analytics/Analytics";
 import { DebtManager } from "@/components/debts/DebtManager";
+import { SoldProductsView } from "@/components/sales/SoldProductsView";
 import { Sidebar } from "@/components/layout/Sidebar";
 import NotificationBell from '@/components/notifications/NotificationBell';
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,6 +29,12 @@ const Index = () => {
   }
 
   const renderActiveView = () => {
+    // Handle sale detail view (format: sale:<id>) before normal switch
+    if (activeView?.startsWith && activeView.startsWith('sale:')) {
+      const saleId = activeView.split(':')[1];
+      return <SoldProductsView saleId={saleId} />;
+    }
+
     switch (activeView) {
       case "products":
         return <ProductManager />;

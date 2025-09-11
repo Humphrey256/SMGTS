@@ -230,7 +230,7 @@ export function Dashboard({ userRole, onNavigate }: DashboardProps) {
               <div 
                 key={sale._id}
                 className="flex items-center justify-between cursor-pointer hover:bg-accent-light rounded p-2 transition-colors"
-                onClick={() => onNavigate?.('sales')}
+                onClick={() => onNavigate?.(`sale:${sale._id}`)}
               >
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{index === 0 ? 'Recent Sale (Latest)' : 'Recent Sale (Previous)'}</span>

@@ -93,3 +93,23 @@ export async function listSales(req: Request, res: Response) {
     res.status(500).json({ message: 'Server error' });
   }
 }
+
+export async function getSaleById(req: Request, res: Response) {
+  try {
+    const sale = await Sale.findById(req.params.id).populate({ path: 'items.product', select: 'name' });
+    if (!sale) return res.status(404).json({ message: 'Not found' });
+
+    const copy = sale.toObject ? sale.toObject() : { ...sale };
+    copy.items = (copy.items || []).map((it: any) => {
+      const productName = it.product && it.product.name ? it.product.name : it.productName;
+      return {
+        ...it,
+        product: { name: productName }
+      };
+    });
+
+    res.json(copy);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+}
