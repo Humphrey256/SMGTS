@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, Package, Users, DollarSign, AlertTriangle } from "lucide-react";
-import { formatUGX } from "@/lib/utils";
+import { formatUGX, formatUSh } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { config } from '@/config';
@@ -242,7 +242,9 @@ export function Dashboard({ userRole, onNavigate }: DashboardProps) {
                     {sale.createdAt ? ` • ${new Date(sale.createdAt).toLocaleString()}` : ''}
                   </span>
                 </div>
-                <Badge variant="outline" className="text-xs">{formatUGX(sale.total)}</Badge>
+                <div className="flex flex-col items-end">
+                  <span className="text-sm">{formatUSh(sale.total)}</span>
+                </div>
               </div>
             ))}
             

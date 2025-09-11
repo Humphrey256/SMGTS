@@ -18,3 +18,15 @@ export function formatUGX(amount: number) {
     return `UGX ${Math.round(amount).toLocaleString()}`;
   }
 }
+
+// Short-format for UI where the prefix uses 'USh' (e.g. 'USh 3,500')
+export function formatUSh(amount: number) {
+  try {
+    const formatted = new Intl.NumberFormat('en-UG', {
+      maximumFractionDigits: 0,
+    }).format(amount);
+    return `USh ${formatted}`;
+  } catch {
+    return `USh ${Math.round(amount).toLocaleString()}`;
+  }
+}

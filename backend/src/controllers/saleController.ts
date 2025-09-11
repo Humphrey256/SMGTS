@@ -49,7 +49,8 @@ export async function createSale(req: AuthRequest, res: Response) {
       const subtotal = unitPrice * item.quantity;
       const costAtSale = variant.costPrice; // cost per base unit
 
-      saleItems.push({ product: product._id, variantId: variant._id, quantity: item.quantity, unitsSold, unitPrice, subtotal, costAtSale });
+  // snapshot the product name so frontends can display it without extra lookups
+  saleItems.push({ product: product._id, productName: product.name, variantId: variant._id, quantity: item.quantity, unitsSold, unitPrice, subtotal, costAtSale });
       total += subtotal;
     }
 
@@ -64,14 +65,30 @@ export async function createSale(req: AuthRequest, res: Response) {
 export async function listSales(req: Request, res: Response) {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-    let query = Sale.find().populate('items.product').sort('-createdAt');
+  // populate product name for each item when available; fall back to stored productName
+  let query = Sale.find().sort('-createdAt');
     
     if (limit) {
       query = query.limit(limit);
     }
     
-    const sales = await query;
-    res.json(sales);
+    // Try to populate product name for each item's product reference
+    const sales = await query.populate({ path: 'items.product', select: 'name' }).exec();
+
+    // Normalize response: ensure items have a .product with a name string
+    const normalized = sales.map((s: any) => {
+      const copy = s.toObject ? s.toObject() : { ...s };
+      copy.items = (copy.items || []).map((it: any) => {
+        const productName = it.product && it.product.name ? it.product.name : it.productName;
+        return {
+          ...it,
+          product: { name: productName }
+        };
+      });
+      return copy;
+    });
+
+    res.json(normalized);
   } catch (err) {
     res.status(500).json({ message: 'Server error' });
   }
