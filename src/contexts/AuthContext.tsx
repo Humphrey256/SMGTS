@@ -22,6 +22,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Auto-logout after inactivity (milliseconds). Default: 30 minutes
+  const INACTIVITY_TIMEOUT = Number(import.meta.env.VITE_INACTIVITY_TIMEOUT) || (30 * 60 * 1000);
 
   const apiBase = config.apiUrl;
 
@@ -36,6 +38,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setIsLoading(false);
   }, []);
+
+  // Inactivity tracking: persist last active timestamp in sessionStorage so refreshes don't reset timer
+  useEffect(() => {
+    if (!token) return; // only start when authenticated
+
+    const LAST_KEY = 'smgts_last_activity';
+
+    function updateActivity() {
+      try { sessionStorage.setItem(LAST_KEY, String(Date.now())); } catch (e) {}
+    }
+
+    // initialize
+    const last = Number(sessionStorage.getItem(LAST_KEY) || Date.now());
+    sessionStorage.setItem(LAST_KEY, String(last));
+
+    // check loop
+    let interval = window.setInterval(() => {
+      const lastSeen = Number(sessionStorage.getItem(LAST_KEY) || Date.now());
+      if (Date.now() - lastSeen > INACTIVITY_TIMEOUT) {
+        // perform logout
+        logout();
+        window.clearInterval(interval);
+      }
+    }, 5 * 1000); // check every 5s
+
+    // activity listeners
+    const events = ['mousemove', 'keydown', 'click', 'touchstart'];
+    events.forEach(ev => window.addEventListener(ev, updateActivity));
+
+    return () => {
+      window.clearInterval(interval);
+      events.forEach(ev => window.removeEventListener(ev, updateActivity));
+    };
+  }, [token]);
 
   const login = async (email: string, password: string) => {
     try {
