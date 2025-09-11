@@ -41,7 +41,6 @@ interface CompletedSale {
   saleNumber: string;
   items: SaleItem[];
   total: number;
-  customer: { name: string; phone: string };
   date: string;
   agent: string;
 }
@@ -60,8 +59,6 @@ export function SalesForm() {
   const [saleItems, setSaleItems] = useState<SaleItem[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
   const [selectedVariantId, setSelectedVariantId] = useState("");
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
 
   // Fetch products from backend
   useEffect(() => {
@@ -199,8 +196,7 @@ export function SalesForm() {
           variantId: item.variant._id,
           quantity: item.quantity
         })),
-        total: totalAmount,
-        customer: customerName.trim() ? { name: customerName, phone: customerPhone } : undefined
+        total: totalAmount
       };
 
       const response = await fetch(`${apiBase}/api/sales`, {
@@ -226,7 +222,6 @@ export function SalesForm() {
         saleNumber,
         items: saleItems,
         total: totalAmount,
-        customer: { name: customerName, phone: customerPhone },
         date: new Date().toISOString(),
         agent: user.email
       };
@@ -234,10 +229,8 @@ export function SalesForm() {
       setCompletedSale(completedSaleData);
       setShowSuccessDialog(true);
 
-      // Reset form
-      setSaleItems([]);
-      setCustomerName("");
-      setCustomerPhone("");
+  // Reset form
+  setSaleItems([]);
 
       toast({
         title: "Success",
@@ -265,9 +258,6 @@ export function SalesForm() {
       ${completedSale.saleNumber}
       Date: ${new Date(completedSale.date).toLocaleString()}
       Agent: ${completedSale.agent}
-      
-      ${completedSale.customer.name ? `Customer: ${completedSale.customer.name}` : ''}
-      ${completedSale.customer.phone ? `Phone: ${completedSale.customer.phone}` : ''}
       
       ITEMS:
       ${completedSale.items.map(item => 
@@ -384,29 +374,6 @@ export function SalesForm() {
           </Card>
 
           <Card className="shadow-soft">
-            <CardHeader>
-              <CardTitle>Customer Information (Optional)</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="customerName">Customer Name</Label>
-                <Input
-                  id="customerName"
-                  placeholder="Enter customer name"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="customerPhone">Phone Number</Label>
-                <Input
-                  id="customerPhone"
-                  placeholder="Enter phone number"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                />
-              </div>
-            </CardContent>
           </Card>
         </div>
 
@@ -530,12 +497,7 @@ export function SalesForm() {
                   <span>Total amount:</span>
                   <span className="text-success">{formatUGX(completedSale.total)}</span>
                 </div>
-                {completedSale.customer.name && (
-                  <div className="flex justify-between">
-                    <span>Customer:</span>
-                    <span>{completedSale.customer.name}</span>
-                  </div>
-                )}
+                {/* customer information removed */}
               </div>
 
               <div className="grid grid-cols-2 gap-2">
