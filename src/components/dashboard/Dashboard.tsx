@@ -232,7 +232,16 @@ export function Dashboard({ userRole, onNavigate }: DashboardProps) {
                 className="flex items-center justify-between cursor-pointer hover:bg-accent-light rounded p-2 transition-colors"
                 onClick={() => onNavigate?.('sales')}
               >
-                <span className="text-sm">Recent Sale {index === 0 ? '(Latest)' : '(Previous)'}</span>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">{index === 0 ? 'Recent Sale (Latest)' : 'Recent Sale (Previous)'}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {sale.items && sale.items.length > 0
+                      ? sale.items.map((it: any) => `${it.product?.name ?? 'Unknown'} x ${it.quantity}`).join(', ')
+                      : 'No items'
+                    }
+                    {sale.createdAt ? ` • ${new Date(sale.createdAt).toLocaleString()}` : ''}
+                  </span>
+                </div>
                 <Badge variant="outline" className="text-xs">{formatUGX(sale.total)}</Badge>
               </div>
             ))}
