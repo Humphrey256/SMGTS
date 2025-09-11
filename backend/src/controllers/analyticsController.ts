@@ -190,7 +190,7 @@ export async function getAnalyticsReport(req: Request, res: Response) {
     ]);
 
     const topProducts = topAgg.map(p => ({
-      name: p.name as string,
+      name: (p.product && p.product.name) ? p.product.name as string : 'Unknown product',
       sales: p.salesQty as number,
       revenue: p.revenue as number,
       profit: p.profit as number
