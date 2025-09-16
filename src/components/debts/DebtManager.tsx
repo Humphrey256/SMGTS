@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { config } from '@/config';
-import { Plus, CreditCard, CheckCircle, XCircle, Clock, Search } from "lucide-react";
+import { Plus, CreditCard, CheckCircle, XCircle, Clock, Search, Printer } from "lucide-react";
 import { formatUGX } from "@/lib/utils";
 
 interface Debt {
@@ -141,6 +141,141 @@ export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
     .filter(debt => debt.status === "Paid" && (userRole === "admin" || debt.agentEmail === userEmail))
     .reduce((sum, debt) => sum + debt.amount, 0);
 
+  // Print helpers: print a single debt or all visible debts in a printable window
+  const printDebt = (debt: Debt) => {
+    const printedOn = new Date().toLocaleString();
+    const html = `
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Debt - ${escapeHtml(debt.title)}</title>
+          <style>
+            @page { size: A4; margin: 20mm; }
+            html,body{height:100%;}
+            body{font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;color:#111;background:#fff}
+            .container{padding:24px;}
+            .brand{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+            .brand .name{font-size:20px;font-weight:700}
+            .muted{color:#666}
+            .box{border:1px solid #e5e7eb;padding:14px;border-radius:6px;margin-top:12px}
+            .row{display:flex;justify-content:space-between;margin-bottom:6px}
+            .label{color:#374151;font-weight:600}
+            .footer{margin-top:28px;color:#666;font-size:12px}
+            @media print {
+              .no-print{display:none}
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="brand">
+              <div>
+                <div class="name">SMGTS</div>
+                <div class="muted">Debt Document</div>
+              </div>
+              <div class="muted">Printed: ${escapeHtml(printedOn)}</div>
+            </div>
+
+            <div>
+              <h2 style="margin:0 0 6px 0">${escapeHtml(debt.title)}</h2>
+              <div class="muted">${escapeHtml(debt.dateIssued)} • ${escapeHtml(debt.issuer)}</div>
+            </div>
+
+            <div class="box">
+              <div class="row"><div class="label">Amount</div><div style="font-weight:700">${escapeHtml(formatUGX(debt.amount))}</div></div>
+              <div class="row"><div class="label">Status</div><div>${escapeHtml(debt.status)}</div></div>
+              <div style="margin-top:8px"><div class="label">Reason</div><div class="muted">${escapeHtml(debt.reason)}</div></div>
+            </div>
+
+            <div class="footer">This document was generated from the SMGTS system.</div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const w = window.open('', '_blank');
+    if (!w) return alert('Popup blocked. Allow popups to print.');
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    // give browser a moment to render then print
+    setTimeout(() => { w.print(); /* optionally close: w.close(); */ }, 300);
+  };
+
+  const printAll = () => {
+    const printedOn = new Date().toLocaleString();
+    const rows = filteredDebts.map(d => `
+      <tr>
+        <td style="padding:10px;border:1px solid #e5e7eb">${escapeHtml(d.title)}</td>
+        <td style="padding:10px;border:1px solid #e5e7eb">${escapeHtml(d.issuer)}</td>
+        <td style="padding:10px;border:1px solid #e5e7eb">${escapeHtml(d.dateIssued)}</td>
+        <td style="padding:10px;border:1px solid #e5e7eb;text-align:right">${escapeHtml(formatUGX(d.amount))}</td>
+        <td style="padding:10px;border:1px solid #e5e7eb">${escapeHtml(d.status)}</td>
+      </tr>
+    `).join('');
+
+    const html = `
+      <!doctype html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Debt Requests</title>
+          <style>
+            @page { size: A4; margin: 20mm; }
+            body{font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;color:#111}
+            .container{padding:20px}
+            h2{margin-bottom:12px}
+            table{border-collapse:collapse;width:100%}
+            th,td{padding:10px;border:1px solid #e5e7eb}
+            thead th{background:#f9fafb;text-align:left}
+            .meta{margin-bottom:10px;color:#666}
+            @media print { .no-print{display:none} }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-weight:700;font-size:18px">SMGTS</div>
+                <div class="meta">Debt Requests</div>
+              </div>
+              <div class="meta">Printed: ${escapeHtml(printedOn)}</div>
+            </div>
+
+            <h2>Debt Requests</h2>
+            <table>
+              <thead>
+                <tr><th>Title</th><th>Requested by</th><th>Date</th><th style="text-align:right">Amount</th><th>Status</th></tr>
+              </thead>
+              <tbody>
+                ${rows}
+              </tbody>
+            </table>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const w = window.open('', '_blank');
+    if (!w) return alert('Popup blocked. Allow popups to print.');
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { w.print(); }, 300);
+  };
+
+  // small helper to escape HTML inserted into printable windows
+  function escapeHtml(input: any) {
+    if (input == null) return '';
+    return String(input)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
@@ -151,56 +286,63 @@ export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
           </p>
         </div>
   {(userRole === "agent" || userRole === "admin") && (
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-primary">
-                <Plus className="h-4 w-4 mr-2" />
-                New Request
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>New Debt (business owes client)</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="clientName">Client Name</Label>
-                  <Input
-                    id="clientName"
-                    placeholder="e.g., John Doe or ACME Ltd"
-                    value={formData.clientName}
-                    onChange={(e) => setFormData({...formData, clientName: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="amount">Amount (UGX)</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="reason">Reason</Label>
-                  <Textarea
-                    id="reason"
-                    placeholder="Explain why you need this advance..."
-                    value={formData.reason}
-                    onChange={(e) => setFormData({...formData, reason: e.target.value})}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full bg-gradient-primary">
-                  Submit Request
+          <div className="flex items-center gap-2">
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-gradient-primary">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Request
                 </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>New Debt (business owes client)</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="clientName">Client Name</Label>
+                    <Input
+                      id="clientName"
+                      placeholder="e.g., John Doe or ACME Ltd"
+                      value={formData.clientName}
+                      onChange={(e) => setFormData({...formData, clientName: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="amount">Amount (UGX)</Label>
+                    <Input
+                      id="amount"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={formData.amount}
+                      onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="reason">Reason</Label>
+                    <Textarea
+                      id="reason"
+                      placeholder="Explain why you need this advance..."
+                      value={formData.reason}
+                      onChange={(e) => setFormData({...formData, reason: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full bg-gradient-primary">
+                    Submit Request
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            <Button variant="outline" onClick={printAll} className="no-print">
+              <Printer className="h-4 w-4 mr-2" />
+              Print All
+            </Button>
+          </div>
         )}
       </div>
 
@@ -317,43 +459,52 @@ export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
                       </div>
                     </div>
                     
-                    {(userRole === "admin" || debt.agentEmail === userEmail) && debt.status === "Pending" && (
-                      <div className="flex gap-2 ml-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateDebtStatus(debt.id, "Paid")}
-                          className="text-success hover:text-success"
-                        >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Approve
-                        </Button>
-                        {userRole === "admin" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              if (!confirm('Delete this debt? This action cannot be undone.')) return;
-                              (async () => {
-                                try {
-                                  const res = await fetch(`${apiBase}/api/debts/${debt.id}`, {
-                                    method: 'DELETE',
-                                    headers: { Authorization: `Bearer ${token}` }
-                                  });
-                                  if (!res.ok) throw new Error('Failed to delete debt');
-                                  setDebts(prev => prev.filter(d => d.id !== debt.id));
-                                  toast({ title: 'Deleted', description: 'Debt removed' });
-                                } catch (err: any) {
-                                  toast({ title: 'Error', description: err.message || 'Could not delete' });
-                                }
-                              })();
-                            }}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <XCircle className="h-4 w-4 mr-1" />
-                            Delete
-                          </Button>
+                    {(userRole === "admin" || debt.agentEmail === userEmail) && (
+                      <div className="flex flex-col gap-2 ml-4">
+                        {debt.status === "Pending" && (
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateDebtStatus(debt.id, "Paid")}
+                              className="text-success hover:text-success"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Approve
+                            </Button>
+                            {userRole === "admin" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  if (!confirm('Delete this debt? This action cannot be undone.')) return;
+                                  (async () => {
+                                    try {
+                                      const res = await fetch(`${apiBase}/api/debts/${debt.id}`, {
+                                        method: 'DELETE',
+                                        headers: { Authorization: `Bearer ${token}` }
+                                      });
+                                      if (!res.ok) throw new Error('Failed to delete debt');
+                                      setDebts(prev => prev.filter(d => d.id !== debt.id));
+                                      toast({ title: 'Deleted', description: 'Debt removed' });
+                                    } catch (err: any) {
+                                      toast({ title: 'Error', description: err.message || 'Could not delete' });
+                                    }
+                                  })();
+                                }}
+                                className="text-destructive hover:text-destructive"
+                              >
+                                <XCircle className="h-4 w-4 mr-1" />
+                                Delete
+                              </Button>
+                            )}
+                          </div>
                         )}
+
+                        <Button variant="outline" size="sm" onClick={() => printDebt(debt)}>
+                          <Printer className="h-4 w-4 mr-1" />
+                          Print
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -369,14 +520,28 @@ export function DebtManager({ userRole, userEmail }: DebtManagerProps) {
 
 // Helper: convert backend debt to frontend Debt type
 function formatDebt(d: any): Debt {
+  // Normalize issuer display: prefer full name, then email; never expose raw DB id in the UI
+  let issuerDisplay = 'Requester';
+  let agentEmail = '';
+  if (d.issuer) {
+    if (typeof d.issuer === 'object') {
+      issuerDisplay = d.issuer.name || d.issuer.email || 'Requester';
+      agentEmail = d.issuer.email || String(d.issuer._id || '');
+    } else if (typeof d.issuer === 'string') {
+      // issuer is an id string (not populated) - do not show the id; show generic label
+      issuerDisplay = 'Requester';
+      agentEmail = d.issuer;
+    }
+  }
+
   return {
     id: d._id,
     title: d.title,
     amount: d.amount,
     reason: d.reason,
-    issuer: d.issuer?.email || d.issuer,
-    dateIssued: new Date(d.createdAt).toISOString().split('T')[0],
+    issuer: issuerDisplay,
+    dateIssued: new Date(d.createdAt).toLocaleDateString(),
     status: d.status,
-    agentEmail: d.issuer?.email || d.issuer
+    agentEmail: agentEmail
   };
 }

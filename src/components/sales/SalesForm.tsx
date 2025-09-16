@@ -75,7 +75,11 @@ export function SalesForm() {
 
         if (response.ok) {
           const products = await response.json();
-          setAvailableProducts(products);
+          // Filter to only show products that have at least one variant with quantity > 0 and a valid name
+          const sellableProducts = products.filter((product: Product) => 
+            product.name && product.name.trim() && product.variants && product.variants.some(variant => variant.quantity > 0)
+          );
+          setAvailableProducts(sellableProducts);
         } else {
           // Attempt to include server response body for easier debugging
           let body = '';
