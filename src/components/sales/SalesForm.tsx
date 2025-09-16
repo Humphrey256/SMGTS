@@ -26,7 +26,12 @@ interface Product {
   _id: string;
   name: string;
   sku: string;
-  variants: ProductVariant[];
+  // Variant-based products
+  variants?: ProductVariant[];
+  // Legacy single-variant products
+  costPrice?: number;
+  sellingPrice?: number;
+  quantity?: number;
 }
 
 interface SaleItem {
@@ -75,10 +80,12 @@ export function SalesForm() {
 
         if (response.ok) {
           const products = await response.json();
-          // Filter to only show products that have at least one variant with quantity > 0 and a valid name
+          console.log('Fetched products:', products);
+          // Filter to only show products that have a valid name (remove variants filter to show all products, even without variants)
           const sellableProducts = products.filter((product: Product) => 
-            product.name && product.name.trim() && product.variants && product.variants.some(variant => variant.quantity > 0)
+            product.name && product.name.trim()
           );
+          console.log('Sellable products after filter:', sellableProducts);
           setAvailableProducts(sellableProducts);
         } else {
           // Attempt to include server response body for easier debugging
@@ -113,7 +120,18 @@ export function SalesForm() {
   }, [token, toast]);
 
   const selectedProduct = availableProducts.find(p => p._id === selectedProductId);
-  const selectedVariant = selectedProduct?.variants.find(v => v._id === selectedVariantId) as ProductVariant | undefined;
+  
+  // Handle both variant-based and legacy products
+  const productVariants = selectedProduct?.variants || (selectedProduct ? [{
+    _id: 'legacy',
+    title: 'Default',
+    packSize: 1,
+    costPrice: selectedProduct.costPrice || 0,
+    price: selectedProduct.sellingPrice || 0,
+    quantity: selectedProduct.quantity || 0
+  }] : []);
+  
+  const selectedVariant = productVariants.find(v => v._id === selectedVariantId) as ProductVariant | undefined;
 
   const addSaleItem = () => {
     if (!selectedProduct || !selectedVariant) return;
@@ -193,11 +211,11 @@ export function SalesForm() {
     try {
       const apiBase = config.apiUrl;
 
-      // Prepare sale data for backend (include variantId)
+      // Prepare sale data for backend (include variantId, but handle legacy products)
       const saleData = {
         items: saleItems.map(item => ({
           product: item.product._id,
-          variantId: item.variant._id,
+          variantId: item.variant._id === 'legacy' ? null : item.variant._id, // Don't send 'legacy' as variantId
           quantity: item.quantity
         })),
         total: totalAmount
@@ -334,10 +352,10 @@ export function SalesForm() {
                   <Label>Select Variant / Pack</Label>
                   <Select value={selectedVariantId} onValueChange={setSelectedVariantId}>
                     <SelectTrigger>
-                      <SelectValue placeholder={selectedProduct.variants.length ? "Choose a variant" : "No variants"} />
+                      <SelectValue placeholder={productVariants?.length ? "Choose a variant" : "No variants available"} />
                     </SelectTrigger>
                     <SelectContent>
-                        {selectedProduct.variants.map(v => (
+                        {(productVariants || []).map(v => (
                           <SelectItem key={v._id} value={v._id}>
                             <div className="flex items-center justify-between w-full">
                               <div>
@@ -349,6 +367,11 @@ export function SalesForm() {
                         ))}
                     </SelectContent>
                   </Select>
+                  {productVariants?.length === 0 && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      This product has no variants. Add variants in Product Management to sell it.
+                    </p>
+                  )}
                 </div>
               )}
               
@@ -357,7 +380,7 @@ export function SalesForm() {
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="font-medium">{selectedProduct.name}</p>
-                      <p className="text-sm text-muted-foreground">Variants: {selectedProduct.variants.length}</p>
+                      <p className="text-sm text-muted-foreground">Variants: {productVariants?.length || 0}</p>
                     </div>
                     <div className="text-right">
                       <p className="font-bold text-lg">{selectedVariant ? formatUGX(selectedVariant.price) : ''}</p>
@@ -368,11 +391,11 @@ export function SalesForm() {
 
               <Button 
                 onClick={addSaleItem} 
-                disabled={!selectedProduct}
+                disabled={!selectedProduct || !selectedVariant}
                 className="w-full bg-gradient-primary"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add to Sale
+                {!selectedProduct ? "Select a product" : !selectedVariant ? "Select a variant" : "Add to Sale"}
               </Button>
             </CardContent>
           </Card>
