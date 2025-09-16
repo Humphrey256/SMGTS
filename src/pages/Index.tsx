@@ -32,7 +32,7 @@ const Index = () => {
     // Handle sale detail view (format: sale:<id>) before normal switch
     if (activeView?.startsWith && activeView.startsWith('sale:')) {
       const saleId = activeView.split(':')[1];
-      return <SoldProductsView saleId={saleId} />;
+      return <SoldProductsView saleId={saleId} onNavigate={setActiveView} />;
     }
 
     switch (activeView) {

@@ -8,9 +8,10 @@ import { Button } from '@/components/ui/button';
 
 interface Props {
   saleId: string;
+  onNavigate?: (view: string) => void;
 }
 
-export function SoldProductsView({ saleId }: Props) {
+export function SoldProductsView({ saleId, onNavigate }: Props) {
   const { token } = useAuth();
   const apiBase = config.apiUrl;
 
@@ -44,7 +45,7 @@ export function SoldProductsView({ saleId }: Props) {
             <div className="text-sm text-muted-foreground">Sale Total</div>
             <div className="text-xl font-bold">{formatUSh(data.total)}</div>
           </div>
-          <Button variant="outline" onClick={() => window.history.back()}>Back</Button>
+          <Button variant="outline" onClick={() => onNavigate ? onNavigate('dashboard') : window.history.back()}>Back</Button>
         </div>
       </div>
 
